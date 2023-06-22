@@ -55,8 +55,8 @@ function Profile() {
                 <FormLabelText rightColumn>email</FormLabelText>
             </div>
             <div className='fields'>
-                <InputField value={name} leftColumn></InputField>
-                <InputField value={email} rightColumn></InputField>
+                <InputField defaultValue={name} leftColumn></InputField>
+                <InputField defaultValue={email} rightColumn></InputField>
             </div>
             <div className = "fieldTitles">
                 <FormLabelText leftColumn>college</FormLabelText>
