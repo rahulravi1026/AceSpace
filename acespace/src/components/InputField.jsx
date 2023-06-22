@@ -12,9 +12,10 @@ const InputField = styled.input`
     border-color: #222222;
   }
   margin-left: ${({ leftColumn }) => (leftColumn ? '30vmin' : '0')};
-  margin-right: ${({ rightColumn }) => (rightColumn ? '30vmin' : '0')}
-  text-indent: 1vmin;
+
   opacity: ${({ readOnly }) => (readOnly ? '0.6' : '1')};
+  text-indent: 1vmin;
+  margin-right: ${({ rightColumn }) => (rightColumn ? '30vmin' : '0')}
 `;
 
 export default InputField;

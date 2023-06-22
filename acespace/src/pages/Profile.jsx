@@ -55,15 +55,15 @@ function Profile() {
                 <FormLabelText rightColumn>email</FormLabelText>
             </div>
             <div className='fields'>
-                <InputField value={name} readOnly leftColumn></InputField>
-                <InputField value={email} readOnly rightColumn></InputField>
+                <InputField value={name} leftColumn></InputField>
+                <InputField value={email} rightColumn></InputField>
             </div>
             <div className = "fieldTitles">
                 <FormLabelText leftColumn>college</FormLabelText>
                 <FormLabelText rightColumn>grad year</FormLabelText>
             </div>
             <div className='fields'>
-                <InputField value={college} readOnly leftColumn></InputField>
+                <InputField leftColumn></InputField>
                 <InputField rightColumn></InputField>
             </div>
             {/* <HeaderText>{name}</HeaderText>
