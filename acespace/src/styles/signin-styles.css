@@ -1,0 +1,54 @@
+@import url('https://fonts.googleapis.com/css2?family=Roboto:wght@400;700&display=swap');
+
+@keyframes fade-in {
+    from {
+      opacity: 0;
+    }
+    to {
+      opacity: 1;
+    }
+}
+
+body {
+    background-color: #222222;
+}
+
+.loginPage {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    animation: fade-in 1s ease-in;
+}
+
+.header {
+    display: flex;
+    align-items: center;
+}
+
+@media (orientation: landscape) {
+    .logo {
+        margin-top: 4.5vmin;
+        margin-left: 3vmin;
+        width: 7vh;
+        height: 4.5vh;
+    }
+}
+
+@media (orientation: portrait) {
+    .logo {
+        margin-top: 7vmax;
+        margin-left: 1.6vmax;
+        width: 7vw;
+        height: 4.5vw;
+    }
+}
+
+.primaryText {
+    color: #c35cf7;
+}
+
+.googleSignInText {
+    font-family: 'Roboto', sans-serif;
+    margin-right: 8px;
+}
