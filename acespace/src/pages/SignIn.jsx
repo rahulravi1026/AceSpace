@@ -50,13 +50,16 @@ function SignIn() {
               }
               else {
                 navigate('/profile');
+                // eslint-disable-next-line
                 const collegeName = user?.email.split('@')[1].split('.')[1].toUpperCase()
                 const formattedDisplayName = formatName(user?.displayName);
                 try {
                     const docRef = await addDoc(collection(db, "users"), {
                       name: formattedDisplayName,
                       email: user?.email,
-                      college: collegeName
+                      college: null,
+                      gradYear: null,
+                      coursesTaken: []
                     });
                     console.log("Document written with ID: ", docRef.id);
                   } catch (e) {

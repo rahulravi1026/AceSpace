@@ -32,20 +32,21 @@ body {
     justify-content: space-between;
 }
 
-.fields {
-    display: flex;
-    margin-bottom: 5vmin;
-    justify-content: space-between;
+.coursesTakenTitle {
+    /* display: flex; */
 }
 
-/* .row:first-child {
-    align-items: flex-start;
+.courseTitles {
+    display: flex;
+    flex-wrap: wrap;
+    width: 85vmax;
 }
-  
-.row:last-child {
-    align-items: flex-end;
-    flex-direction: row-reverse;
-} */
+
+.fields {
+    display: flex;
+    margin-bottom: 3.5vmin;
+    justify-content: space-between;
+}
 
 @media (orientation: landscape) {
     .logo {
@@ -72,4 +73,25 @@ body {
 .googleSignInText {
     font-family: 'Roboto', sans-serif;
     margin-right: 8px;
+}
+
+.dropdown {
+    list-style: none;
+    background-color: #000000;
+    border-radius: 8px;
+    padding: 0;
+    width: 35vmin;
+    margin-left: 30vmin;
+    margin-top: 1vmin;
+}
+
+.dropdownElement {
+    color: #ffffff;
+    padding: 1vmin;
+    cursor: pointer;
+    font-size: 1.5vmin;
+    &:hover {
+        background-color: #111111;
+        color: #c35cf7;
+    }
 }
