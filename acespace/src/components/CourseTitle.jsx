@@ -10,12 +10,13 @@ const RectangleContainer = styled.div`
   border-radius: 4px;
   height: 1vmin;
   width: 12vmin;
-  &:first-child {
-    margin-left: 30vmin;
-  }
-  &:not(:first-child) {
-    margin-left: 2vmin;
-  }
+  margin-left: 2vmin;
+  // // &:first-child {
+  // //   margin-left: 30vmin;
+  // // }
+  // &:not(:first-child) {
+  //   margin-left: 2vmin;
+  // }
   margin-bottom: 1vmin;
 `;
 

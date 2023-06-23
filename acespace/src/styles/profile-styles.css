@@ -41,7 +41,8 @@ body {
 .courseTitles {
     display: flex;
     flex-wrap: wrap;
-    width: 85vmax;
+    width: 70vmax;
+    margin-left: 28vmin;
 }
 
 .fields {
