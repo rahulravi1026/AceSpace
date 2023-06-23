@@ -129,9 +129,10 @@ function Profile() {
 
     const handleResultClick = (result) => {
         const nextElement = result.split(' ')[0] + ' ' + result.split(' ')[1];
-        if (!coursesTaken.includes(nextElement)) {
-            setCoursesTaken([...coursesTaken, nextElement]);
-        }
+        
+        // if (!coursesTaken.includes(nextElement)) {
+        //     setCoursesTaken([...coursesTaken, nextElement]);
+        // }
     };
 
     const handleCourseRemove = (course) => {
