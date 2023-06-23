@@ -1,0 +1,30 @@
+@import url('https://fonts.googleapis.com/css2?family=Roboto:wght@400;700&display=swap');
+
+@keyframes fade-in {
+    from {
+      opacity: 0;
+    }
+    to {
+      opacity: 1;
+    }
+}
+
+body {
+    background-color: #222222;
+}
+
+.homePage {
+    position: relative;
+    animation: fade-in 1s ease-in;
+}
+
+.header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+.yourHomeText {
+    margin-left: 50%;
+    transform: translateX(-50%);
+}
