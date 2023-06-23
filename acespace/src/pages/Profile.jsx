@@ -129,6 +129,8 @@ function Profile() {
         const querySnapshot = await getDocs(query(usersRef, where("email", "==", user?.email)));
         const userRef = doc(db, "users", querySnapshot.docs[0].id);
         await updateDoc(userRef, {
+            name: name,
+            email: email,
             college: college,
             gradYear: gradYear,
             coursesTaken: coursesTaken
