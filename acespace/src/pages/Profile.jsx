@@ -2,6 +2,8 @@ import HeaderText from '../components/HeaderText';
 import FormLabelText from '../components/FormLabelText';
 import InputField from '../components/InputField';
 import CourseTitle from '../components/CourseTitle';
+import PrimaryButton from '../components/PrimaryButton';
+import ButtonText from '../components/ButtonText';
 // import logo from '../assets/logo.png';
 
 import '../styles/profile-styles.css';
@@ -10,8 +12,11 @@ import { auth, db } from "../firebaseConfig";
 import { useAuthState } from "react-firebase-hooks/auth";
 import { collection, getDocs, query, where, doc, updateDoc } from "firebase/firestore"; 
 import { useEffect, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 
 function Profile() {
+    const navigate = useNavigate();
+
     const [user] = useAuthState(auth);
 
     const [name, setName] = useState('');
@@ -24,6 +29,10 @@ function Profile() {
     const [searchResults, setSearchResults] = useState([]);
 
     const [dropdownVisible, setDropdownVisible] = useState(false);
+
+    function goHome() {
+        navigate("/");
+    }
 
     function logout() {
         signOut(auth);
@@ -83,7 +92,7 @@ function Profile() {
                     }
                 });
             });
-            setSearchResults(queryCourses);
+            setSearchResults(queryCourses.slice(0,3));
           } catch (error) {
             console.error('Error fetching search results:', error);
           }
@@ -97,9 +106,16 @@ function Profile() {
         }
     }, [searchQuery]);
 
+    const handleNameChange = (event) => {
+        setName(event.target.value);
+    };
+
+    const handleEmailChange = (event) => {
+        setEmail(event.target.value);
+    };
+
     const handleCollegeChange = (event) => {
         setCollege(event.target.value);
-        console.log(college);
     };
 
     const handleGradYearChange = (event) => {
@@ -138,17 +154,19 @@ function Profile() {
     }
 
     return (
-        <div>
+        <div className = "profilePage">
             <div className = "header">
-                <HeaderText>create your <span className = "primaryText">profile</span></HeaderText>
+                <HeaderText className = "createProfileText">create your <span className = "primaryText">profile</span></HeaderText>
+                <ButtonText onClick={goHome}>Home</ButtonText>
+                <ButtonText onClick={logout}>Logout</ButtonText>
             </div>
             <div className='fieldTitles'>
                 <FormLabelText leftColumn>name</FormLabelText>
                 <FormLabelText rightColumn>email</FormLabelText>
             </div>
             <div className='fields'>
-                <InputField defaultValue={name} leftColumn></InputField>
-                <InputField defaultValue={email} rightColumn></InputField>
+                <InputField defaultValue={name} onChange = {handleNameChange} leftColumn></InputField>
+                <InputField defaultValue={email} onChange = {handleEmailChange} rightColumn></InputField>
             </div>
             <div className = "fieldTitles">
                 <FormLabelText leftColumn>college</FormLabelText>
@@ -178,9 +196,10 @@ function Profile() {
                      </ul>
                 )}
             </div>
-            <button onClick={saveFields}>Save</button>
-            <button onClick = {logout}>Logout</button>
-
+            <div className = "saveButton">
+                <PrimaryButton onClick={saveFields}>Save</PrimaryButton>
+            </div>
+            {/* <PrimaryButton onClick = {logout}>Logout</PrimaryButton> */}
         </div>
     );
 }

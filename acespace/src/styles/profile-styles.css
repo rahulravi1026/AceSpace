@@ -13,18 +13,20 @@ body {
     background-color: #222222;
 }
 
-.loginPage {
-    /* display: flex; */
-    /* flex-direction: column; */
-    /* align-items: center; */
-    /* text-align: center; */
+.profilePage {
+    position: relative;
     animation: fade-in 1s ease-in;
 }
 
 .header {
     display: flex;
     align-items: center;
-    justify-content: center;
+    justify-content: space-between;
+}
+
+.createProfileText {
+    margin-left: 50%;
+    transform: translateX(-50%);
 }
 
 .fieldTitles {
@@ -75,6 +77,10 @@ body {
     margin-right: 8px;
 }
 
+.searchField {
+    position: relative;
+}
+
 .dropdown {
     list-style: none;
     background-color: #000000;
@@ -94,4 +100,11 @@ body {
         background-color: #111111;
         color: #c35cf7;
     }
+}
+
+.saveButton {
+    position: fixed;
+    left: 50%;
+    transform: translateX(-50%);
+    bottom: 15vmin;
 }
