@@ -19,6 +19,7 @@ import CourseHeading from '../components/CourseHeading';
 import TipPopupForm from '../components/TipPopupForm';
 import ResourcePopupForm from '../components/ResourcePopupForm';
 import TipCard from '../components/TipCard';
+import ResourceCard from '../components/ResourceCard';
 
 function Course() {
     const { courseName } = useParams();
@@ -34,11 +35,13 @@ function Course() {
     const [professorSelected, setProfessorSelected] = useState(null);
     const [sharedNotes, setSharedNotes] = useState(null);
     const [tips, setTips] = useState(null);
+    const [resources, setResources] = useState(null);
 
     const [isTipPopupOpen, setIsTipPopupOpen] = useState(false);
     const [isResourcePopupOpen, setIsResourcePopupOpen] = useState(false);
 
     const [isTipsVisible, setIsTipsVisible] = useState(false);
+    const [isResourcesVisible, setIsResourcesVisible] = useState(false);
 
     const toggleTipPopup = () => {
       setIsTipPopupOpen(!isTipPopupOpen);
@@ -140,7 +143,7 @@ function Course() {
         getSharedNotesAndTips();
     }, [professorSelected, fullCourse, major]);
 
-    const handleSubmit = async (newTitle, newTime, newText) => {
+    const handleTipSubmit = async (newTitle, newTime, newText) => {
         const professorRef = await doc(db, "majors", major, "courses", fullCourse, "professors", professorSelected);
 
         const usersRef = collection(db, "users");
@@ -158,8 +161,31 @@ function Course() {
         });
     }
 
+    const handleResourceSubmit = async (newTitle, newTime, newFile) => {
+        const professorRef = await doc(db, "majors", major, "courses", fullCourse, "professors", professorSelected);
+
+        const usersRef = collection(db, "users");
+        const querySnapshot = await getDocs(query(usersRef, where("email", "==", user?.email)));
+        const fileURL = URL.createObjectURL(newFile);
+        await updateDoc(professorRef, {
+            resources: arrayUnion({title: newTitle, time: newTime, file: fileURL, user: querySnapshot.docs[0].data().email})
+        });
+
+        const professorData = (await getDoc(doc(db, "majors", major, "courses", fullCourse, "professors", professorSelected))).data();
+        setResources(professorData?.resources);
+        setIsResourcePopupOpen(!isResourcePopupOpen);
+        toast.info('Your resource has been added!', {
+            theme: "dark",
+            icon: ({theme, type}) =>  <img src={infoIcon} alt="Info Icon"/>,
+        });
+    }
+
     const handleTipsClick = () => {
         setIsTipsVisible(!isTipsVisible);
+    }
+
+    const handleResourcesClick = () => {
+        setIsResourcesVisible(!isResourcesVisible);
     }
 
     return (
@@ -202,17 +228,24 @@ function Course() {
                 ) : null
             ) : null}
             <div class = "resourcesContainer">
-                <CourseHeading>resources</CourseHeading>
+                <CourseHeading onClick={handleResourcesClick}>resources</CourseHeading>
                 <img src = {addIcon} className = "addIcon" onClick={toggleResourcePopup} alt = "addIcon"></img>
             </div>
+            {isResourcesVisible && 
+                <div className="coursesTakenTitle">
+                    <div className = "resourceCards">
+                        {resources?.map((resource, index) => (
+                            <ResourceCard key = {index} title = {resource.title} time = {resource.time} selectedFile = {resource.file}  />
+                        ))}
+                    </div>
+                </div>
+            }
             <div class = "tipsContainer">
                 <CourseHeading onClick={handleTipsClick}>tips & tricks</CourseHeading>
                 <img src = {addIcon} className = "addIcon" onClick={toggleTipPopup} alt = "addIcon"></img>
             </div>
-            {isTipPopupOpen && <TipPopupForm handleSubmit={handleSubmit} handleCancel={toggleTipPopup} />}
-            {isResourcePopupOpen && <ResourcePopupForm handleCancel={toggleResourcePopup} />}
             {isTipsVisible && 
-                <div className='coursesTakenTitle'>
+                <div className="coursesTakenTitle">
                     <div className = "tipCards">
                         {tips?.map((tip, index) => (
                             <TipCard key = {index} title = {tip.title} time = {tip.time} text = {tip.text}  />
@@ -220,6 +253,8 @@ function Course() {
                     </div>
                 </div>
             }
+            {isTipPopupOpen && <TipPopupForm handleSubmit={handleTipSubmit} handleCancel={toggleTipPopup} />}
+            {isResourcePopupOpen && <ResourcePopupForm handleSubmit={handleResourceSubmit} handleCancel={toggleResourcePopup} />}
         </div>
         )}
         </>
