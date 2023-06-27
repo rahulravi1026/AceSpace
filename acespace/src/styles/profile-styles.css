@@ -24,6 +24,10 @@ body {
     justify-content: space-between;
 }
 
+.navBar {
+    margin-top: 2vmin;
+}
+
 .createProfileText {
     margin-left: 50%;
     transform: translateX(-50%);
@@ -90,6 +94,8 @@ body {
     width: 35vmin;
     margin-left: 30vmin;
     margin-top: 1vmin;
+    max-height: 15vmin; /* Adjust the maximum height as needed */
+    overflow-y: auto;
 }
 
 .dropdownElement {

@@ -1,0 +1,118 @@
+@import url('https://fonts.googleapis.com/css2?family=Roboto:wght@400;700&display=swap');
+
+@keyframes fade-in {
+    from {
+      opacity: 0;
+    }
+    to {
+      opacity: 1;
+    }
+}
+
+body {
+    background-color: #222222;
+}
+
+.coursePage {
+    animation: fade-in 1s ease-in;
+}
+
+.header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+/* .navBar {
+    margin-top: 3vmin;
+} */
+
+.createProfileText {
+    margin-left: 50%;
+    transform: translateX(-50%);
+}
+
+@media (orientation: landscape) {
+    .logo {
+        margin-top: 4.5vmin;
+        margin-left: 3vmin;
+        width: 7vh;
+        height: 4.5vh;
+    }
+}
+
+@media (orientation: portrait) {
+    .logo {
+        margin-top: 7vmax;
+        margin-left: 1.6vmax;
+        width: 7vw;
+        height: 4.5vw;
+    }
+}
+
+.professors {
+    display: flex;
+    justify-content: center;
+}
+
+.listedProfessor {
+    cursor: pointer;
+}
+
+.sharedNotesContainer {
+    margin-left: 20vmin;
+    margin-top: 1vmin;
+    margin-bottom: 1vmin;
+}
+
+.sharedNotesText {
+    color: white;
+    font-size: 1.2rem;
+    margin-right: 2vmin;
+}
+
+.sharedNotesLink {
+    font-size: 2.2vmin;
+    color: white;
+    cursor: pointer;
+    text-decoration: none;
+    font-weight: bold;
+    &:hover {
+        color: #c35cf7;
+    }
+}
+
+.resourcesContainer {
+    display: flex;
+    align-items: center;
+    margin-left: 20vmin;
+}
+
+.tipsContainer {
+    display: flex;
+    align-items: center;
+    margin-left: 20vmin;
+}
+
+.addIcon {
+    width: 3.3vmin;
+    height: 3.3vmin;
+    &:hover {
+        cursor: pointer;
+    }
+}
+
+.card {
+    background-color: #fff;
+    border-radius: 4px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    padding: 20px;
+    text-align: center;
+}
+
+.brodie {
+    display: flex;
+    color: white;
+    margin-left: 20vmin;
+    font-size: 1.5vmin;
+}

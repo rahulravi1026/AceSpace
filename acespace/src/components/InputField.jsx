@@ -7,7 +7,7 @@ const InputField = styled.input`
   border: 1px solid #222;
   border-radius: 8px;
   height: 3vmin;
-  width: 35vmin;
+  width: ${({ justifyWidth }) => (justifyWidth ? '' : '35vmin')};
   &:focus {
     border-color: #222222;
   }
