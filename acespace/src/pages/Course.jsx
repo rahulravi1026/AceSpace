@@ -18,6 +18,7 @@ import ListedProfessor from '../components/ListedProfessor';
 import CourseHeading from '../components/CourseHeading';
 import TipPopupForm from '../components/TipPopupForm';
 import ResourcePopupForm from '../components/ResourcePopupForm';
+import TipCard from '../components/TipCard';
 
 function Course() {
     const { courseName } = useParams();
@@ -36,6 +37,8 @@ function Course() {
 
     const [isTipPopupOpen, setIsTipPopupOpen] = useState(false);
     const [isResourcePopupOpen, setIsResourcePopupOpen] = useState(false);
+
+    const [isTipsVisible, setIsTipsVisible] = useState(false);
 
     const toggleTipPopup = () => {
       setIsTipPopupOpen(!isTipPopupOpen);
@@ -137,13 +140,13 @@ function Course() {
         getSharedNotesAndTips();
     }, [professorSelected, fullCourse, major]);
 
-    const handleSubmit = async (newTitle, newText) => {
+    const handleSubmit = async (newTitle, newTime, newText) => {
         const professorRef = await doc(db, "majors", major, "courses", fullCourse, "professors", professorSelected);
 
         const usersRef = collection(db, "users");
         const querySnapshot = await getDocs(query(usersRef, where("email", "==", user?.email)));
         await updateDoc(professorRef, {
-            tips: arrayUnion({title: newTitle, text: newText, user: querySnapshot.docs[0].data().email})
+            tips: arrayUnion({title: newTitle, time: newTime, text: newText, user: querySnapshot.docs[0].data().email})
         });
 
         const professorData = (await getDoc(doc(db, "majors", major, "courses", fullCourse, "professors", professorSelected))).data();
@@ -153,6 +156,10 @@ function Course() {
             theme: "dark",
             icon: ({theme, type}) =>  <img src={infoIcon} alt="Info Icon"/>,
         });
+    }
+
+    const handleTipsClick = () => {
+        setIsTipsVisible(!isTipsVisible);
     }
 
     return (
@@ -167,11 +174,13 @@ function Course() {
                     <ButtonText onClick={logout}>Logout</ButtonText>
                 </nav>
             </div>
-            <div class = "professors">
+            <div className = "professors">
                 {professors?.map((professor, index) => (
                     <ListedProfessor key = {index} className="listedProfessor" 
                                    style={{ textDecoration: professorSelected === professor ? 'underline' : 'none', 
-                                            textDecorationColor: professorSelected === professor ? '#c35cf7' : '#000000' }} 
+                                            textDecorationColor: professorSelected === professor ? '#c35cf7' : '#000000',
+                                            fontWeight: professorSelected === professor ? 'bold' : 'normal'
+                                         }} 
                                    onClick={(e) => setProfessorSelected(e.target.innerText)}>
                         {professor}
                     </ListedProfessor>
@@ -197,16 +206,20 @@ function Course() {
                 <img src = {addIcon} className = "addIcon" onClick={toggleResourcePopup} alt = "addIcon"></img>
             </div>
             <div class = "tipsContainer">
-                <CourseHeading>tips & tricks</CourseHeading>
+                <CourseHeading onClick={handleTipsClick}>tips & tricks</CourseHeading>
                 <img src = {addIcon} className = "addIcon" onClick={toggleTipPopup} alt = "addIcon"></img>
             </div>
             {isTipPopupOpen && <TipPopupForm handleSubmit={handleSubmit} handleCancel={toggleTipPopup} />}
             {isResourcePopupOpen && <ResourcePopupForm handleCancel={toggleResourcePopup} />}
-            {tips?.map((tip, index) => (
-                <span key = {index} className = "brodie">
-                    {tip.title}: {tip.text} from {tip.user}
-                </span>
-            ))}
+            {isTipsVisible && 
+                <div className='coursesTakenTitle'>
+                    <div className = "tipCards">
+                        {tips?.map((tip, index) => (
+                            <TipCard key = {index} title = {tip.title} time = {tip.time} text = {tip.text}  />
+                        ))}
+                    </div>
+                </div>
+            }
         </div>
         )}
         </>

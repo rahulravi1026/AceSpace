@@ -102,6 +102,13 @@ body {
     }
 }
 
+.tipCards {
+    display: flex;
+    flex-wrap: wrap;
+    width: 85vmax;
+    margin-left: 18vmin;
+}
+
 .card {
     background-color: #fff;
     border-radius: 4px;
