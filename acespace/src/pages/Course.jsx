@@ -1,8 +1,9 @@
 import { useNavigate, useParams } from 'react-router-dom';
 import HeaderText from '../components/HeaderText';
 // import FormLabelText from '../components/FormLabelText';
-import { auth, db } from "../firebaseConfig";
+import { auth, db, storage } from "../firebaseConfig";
 import { collection, getDocs, getDoc, doc, updateDoc, arrayUnion, query, where } from "firebase/firestore"; 
+import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
 import { useEffect, useState } from 'react';
 import '../styles/course-styles.css';
 import ButtonText from '../components/ButtonText';
@@ -167,18 +168,34 @@ function Course() {
 
         const usersRef = collection(db, "users");
         const querySnapshot = await getDocs(query(usersRef, where("email", "==", user?.email)));
-        const fileURL = URL.createObjectURL(newFile);
-        await updateDoc(professorRef, {
-            resources: arrayUnion({title: newTitle, time: newTime, file: fileURL, user: querySnapshot.docs[0].data().email})
-        });
 
-        const professorData = (await getDoc(doc(db, "majors", major, "courses", fullCourse, "professors", professorSelected))).data();
-        setResources(professorData?.resources);
+        console.log(newFile.name);
+        const storageRef = ref(storage, newFile.name);
+        uploadBytes(storageRef, newFile)
+            .then(() => {
+                getDownloadURL(storageRef)
+                .then(async (url) => {
+                    console.log("File URL: ", url);
+                    await updateDoc(professorRef, {
+                        resources: arrayUnion({title: newTitle, time: newTime, file: url, user: querySnapshot.docs[0].data().email})
+                    })
+
+                    const professorData = (await getDoc(doc(db, "majors", major, "courses", fullCourse, "professors", professorSelected))).data();
+                    setResources(professorData?.resources);
+                    toast.info('Your resource has been added!', {
+                        theme: "dark",
+                        icon: ({theme, type}) =>  <img src={infoIcon} alt="Info Icon"/>,
+                    });
+                })
+                .catch((e) => {
+                    console.error("Error getting file URL: ", e)
+                })
+            })
+            .catch((e) => {
+                console.error("Error uploading file: ", e);
+            })
+        
         setIsResourcePopupOpen(!isResourcePopupOpen);
-        toast.info('Your resource has been added!', {
-            theme: "dark",
-            icon: ({theme, type}) =>  <img src={infoIcon} alt="Info Icon"/>,
-        });
     }
 
     const handleTipsClick = () => {
@@ -229,7 +246,7 @@ function Course() {
                     </div>
                 ) : null
             ) : null}
-            <div class = "resourcesContainer">
+            <div className = "resourcesContainer">
                 <CourseHeading onClick={handleResourcesClick}>resources</CourseHeading>
                 <img src = {addIcon} className = "addIcon" onClick={toggleResourcePopup} alt = "addIcon"></img>
             </div>
@@ -242,7 +259,7 @@ function Course() {
                     </div>
                 </div>
             }
-            <div class = "tipsContainer">
+            <div className = "tipsContainer">
                 <CourseHeading onClick={handleTipsClick}>tips & tricks</CourseHeading>
                 <img src = {addIcon} className = "addIcon" onClick={toggleTipPopup} alt = "addIcon"></img>
             </div>
