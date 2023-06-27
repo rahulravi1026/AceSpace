@@ -134,6 +134,7 @@ function Course() {
                         const professorData = professorSnapshot.data();
                         setSharedNotes(professorData?.sharedNotes);
                         setTips(professorData?.tips);
+                        setResources(professorData?.resources);
                     }
                 }
             } catch (e) {
@@ -186,6 +187,7 @@ function Course() {
 
     const handleResourcesClick = () => {
         setIsResourcesVisible(!isResourcesVisible);
+        console.log(resources);
     }
 
     return (
