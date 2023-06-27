@@ -11,12 +11,6 @@ const RectangleContainer = styled.div`
   height: 1vmin;
   width: 12vmin;
   margin-left: 2vmin;
-  // // &:first-child {
-  // //   margin-left: 30vmin;
-  // // }
-  // &:not(:first-child) {
-  //   margin-left: 2vmin;
-  // }
   margin-bottom: 1vmin;
 `;
 
