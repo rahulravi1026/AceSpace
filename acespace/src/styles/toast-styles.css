@@ -1,0 +1,8 @@
+.react-toastify .Toastify__progress-bar {
+    background-color: purple;
+  }
+  
+  /* Customize the icon color */
+  .react-toastify .Toastify__toast-body::before {
+    color: purple;
+  }

@@ -3,6 +3,8 @@ import { Route, Routes } from 'react-router-dom';
 import SignIn from './pages/SignIn'
 import Profile from './pages/Profile'
 import Home from './pages/Home'
+import Test from './pages/Test'
+import Course from './pages/Course';
 import { useNavigate } from 'react-router-dom';
 import { useAuthState } from "react-firebase-hooks/auth";
 import { auth } from './firebaseConfig';
@@ -22,11 +24,15 @@ function App() {
 	}, [user, loading, error, navigate]);
 
   return (
-    <Routes>
-      <Route path = "/" element = {<Home />} />
-      <Route path = "login" element = {<SignIn />} />
-      <Route path = "profile" element = {<Profile />} />
-    </Routes>
+    //<Router>
+      <Routes>
+        <Route path = "/" element = {<Home />} />
+        <Route path = "login" element = {<SignIn />} />
+        <Route path = "profile" element = {<Profile />} />
+        <Route path = "test" element = {<Test />} />
+        <Route path="/course/:courseName" element={<Course />} />
+      </Routes>
+    //</Router>
   );
 }
 

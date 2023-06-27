@@ -5,6 +5,7 @@ import CourseTitle from '../components/CourseTitle';
 import PrimaryButton from '../components/PrimaryButton';
 import ButtonText from '../components/ButtonText';
 // import logo from '../assets/logo.png';
+import infoIcon from '../assets/info-icon.png';
 
 import '../styles/profile-styles.css';
 import { signOut } from 'firebase/auth';
@@ -13,6 +14,10 @@ import { useAuthState } from "react-firebase-hooks/auth";
 import { collection, getDocs, query, where, doc, updateDoc } from "firebase/firestore"; 
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { toast } from 'react-toastify';
+import 'react-toastify/dist/ReactToastify.css';
+import '../styles/toast-styles.css';
+import StyledToastContainer from '../components/StyledToastContainer';
 
 function Profile() {
     const navigate = useNavigate();
@@ -33,6 +38,10 @@ function Profile() {
     function goHome() {
         navigate("/");
     }
+
+    // function goTest() {
+    //     navigate("/test");
+    // }
 
     function logout() {
         signOut(auth);
@@ -77,34 +86,69 @@ function Profile() {
         // eslint-disable-next-line
 	}, [user?.email]);
 
+    // useEffect(() => {
+    //     const fetchSearchResults = async () => {
+    //       try {
+    //         const majorsRef = collection(db, "majors");
+    //         const querySnapshot = await getDocs(majorsRef);
+    //         let queryCourses = [];
+    //         querySnapshot.forEach((doc) => {
+    //             const courses = doc.data().courses;
+    //             courses.forEach((course) => {
+    //                 const combinedString = doc.id.toUpperCase() + " " + formatCourseName(course);
+    //                 if (combinedString.toLowerCase().includes(searchQuery.toLowerCase())) {
+    //                   queryCourses.push(combinedString);
+    //                 }
+    //             });
+    //         });
+    //         setSearchResults(queryCourses);
+    //       } catch (error) {
+    //         console.error('Error fetching search results:', error);
+    //       }
+    //     };
+    
+    //     if (searchQuery === '') {
+    //         setSearchResults([]);
+    //     }
+    //     else {
+    //         fetchSearchResults();
+    //     }
+    // }, [searchQuery]);
+
     useEffect(() => {
         const fetchSearchResults = async () => {
           try {
             const majorsRef = collection(db, "majors");
             const querySnapshot = await getDocs(majorsRef);
             let queryCourses = [];
-            querySnapshot.forEach((doc) => {
-                const courses = doc.data().courses;
-                courses.forEach((course) => {
-                    const combinedString = doc.id.toUpperCase() + " " + formatCourseName(course);
-                    if (combinedString.toLowerCase().includes(searchQuery.toLowerCase())) {
-                      queryCourses.push(combinedString);
-                    }
-                });
-            });
-            setSearchResults(queryCourses.slice(0,3));
+      
+            for (const doc of querySnapshot.docs) {
+              const coursesForMajor = await getDocs(collection(db, "majors", doc.id, "courses"));
+      
+              if (!coursesForMajor.empty) {
+                for (const course of coursesForMajor.docs) {
+                  const combinedString = doc.id.toUpperCase() + " " + formatCourseName(course.id);
+                  console.log(combinedString);
+                  if (combinedString.toLowerCase().includes(searchQuery.toLowerCase())) {
+                    queryCourses.push(combinedString);
+                  }
+                }
+              }
+            }
+            if(searchQuery !== '') {
+                setSearchResults(queryCourses);
+            }
           } catch (error) {
             console.error('Error fetching search results:', error);
           }
         };
-    
+      
         if (searchQuery === '') {
-            setSearchResults([]);
+          setSearchResults([]);
+        } else {
+          fetchSearchResults();
         }
-        else {
-            fetchSearchResults();
-        }
-    }, [searchQuery]);
+      }, [searchQuery]); 
 
     const handleNameChange = (event) => {
         setName(event.target.value);
@@ -152,14 +196,22 @@ function Profile() {
             gradYear: gradYear,
             coursesTaken: coursesTaken
         });
+        toast.info('Your profile has been saved!', {
+            theme: "dark",
+            icon: ({theme, type}) =>  <img src={infoIcon} alt="Info Icon"/>,
+        });
     }
 
     return (
         <div className = "profilePage">
+            <StyledToastContainer position="top-left" theme="dark"/>
             <div className = "header">
                 <HeaderText className = "createProfileText">create your <span className = "primaryText">profile</span></HeaderText>
-                <ButtonText onClick={goHome}>Home</ButtonText>
-                <ButtonText onClick={logout}>Logout</ButtonText>
+                <nav className = "navBar">
+                    <ButtonText onClick={goHome}>Home</ButtonText>
+                    {/* <ButtonText onClick={goTest}>Test</ButtonText> */}
+                    <ButtonText onClick={logout}>Logout</ButtonText>
+                </nav>
             </div>
             <div className='fieldTitles'>
                 <FormLabelText leftColumn>name</FormLabelText>

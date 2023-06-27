@@ -4,8 +4,8 @@ const ButtonText = styled.span`
   cursor: pointer;
   color: white;
   font-size: 2.5vmin;
-  margin-right: 5vmin;
-  transform: translateY(2vmin);
+  margin-right: 10vmin;
+  transform: translateY(20vmin);
   &:hover {
     color: #c35cf7;
 
