@@ -6,6 +6,10 @@ const CourseHeading = styled.h1`
         font-size: 3vmin;
         margin-right: 2vmin;
     }
+    &:hover {
+        cursor: pointer;
+        color: #c35cf7;
+    }
 `;
 
 export default CourseHeading;

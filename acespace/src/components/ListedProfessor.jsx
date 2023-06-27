@@ -1,6 +1,6 @@
 import styled from 'styled-components';
 
-const ListedProfessor = styled.h1`
+const ListedProfessor = styled.span`
     color: white;
     @media (orientation: landscape) {
         font-size: 1.7rem;
