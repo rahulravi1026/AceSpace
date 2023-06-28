@@ -251,11 +251,15 @@ function Course() {
                 <img src = {addIcon} className = "addIcon" onClick={toggleResourcePopup} alt = "addIcon"></img>
             </div>
             {isResourcesVisible && 
-                <div className="coursesTakenTitle">
+                <div className = "coursesTakenTitle">
                     <div className = "resourceCards">
-                        {resources?.map((resource, index) => (
-                            <ResourceCard key = {index} title = {resource.title} time = {resource.time} selectedFile = {resource.file}  />
-                        ))}
+                        {resources ? (
+                            resources?.map((resource, index) => (
+                                <ResourceCard key = {index} title = {resource.title} time = {resource.time} selectedFile = {resource.file}  />
+                            ))
+                        ) : 
+                            <span className = "noneDisplay">No resources to display :(</span>
+                        }
                     </div>
                 </div>
             }
@@ -264,11 +268,15 @@ function Course() {
                 <img src = {addIcon} className = "addIcon" onClick={toggleTipPopup} alt = "addIcon"></img>
             </div>
             {isTipsVisible && 
-                <div className="coursesTakenTitle">
+                <div className = "coursesTakenTitle">
                     <div className = "tipCards">
-                        {tips?.map((tip, index) => (
-                            <TipCard key = {index} title = {tip.title} time = {tip.time} text = {tip.text}  />
-                        ))}
+                        {tips ? (
+                            tips?.map((tip, index) => (
+                                <TipCard key = {index} title = {tip.title} time = {tip.time} text = {tip.text}  />
+                            ))
+                        ) :
+                            <span className = "noneDisplay">No tips to display :(</span>
+                        }
                     </div>
                 </div>
             }
