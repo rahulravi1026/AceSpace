@@ -21,6 +21,7 @@ import TipPopupForm from '../components/TipPopupForm';
 import ResourcePopupForm from '../components/ResourcePopupForm';
 import TipCard from '../components/TipCard';
 import ResourceCard from '../components/ResourceCard';
+import axios from 'axios';
 
 function Course() {
     const { courseName } = useParams();
@@ -169,6 +170,11 @@ function Course() {
         const usersRef = collection(db, "users");
         const querySnapshot = await getDocs(query(usersRef, where("email", "==", user?.email)));
 
+        const formData = new FormData();
+        formData.append('pdf', newFile);
+        
+        const imageURL = await convertPDFToImage(formData);
+
         console.log(newFile.name);
         const storageRef = ref(storage, newFile.name);
         uploadBytes(storageRef, newFile)
@@ -177,7 +183,7 @@ function Course() {
                 .then(async (url) => {
                     console.log("File URL: ", url);
                     await updateDoc(professorRef, {
-                        resources: arrayUnion({title: newTitle, time: newTime, file: url, user: querySnapshot.docs[0].data().email})
+                        resources: arrayUnion({title: newTitle, time: newTime, file: url, image: imageURL, user: querySnapshot.docs[0].data().email})
                     })
 
                     const professorData = (await getDoc(doc(db, "majors", major, "courses", fullCourse, "professors", professorSelected))).data();
@@ -206,6 +212,16 @@ function Course() {
         setIsResourcesVisible(!isResourcesVisible);
         console.log(resources);
     }
+
+    const convertPDFToImage = async (formData) => {
+        try {
+            const response = await axios.post("http://127.0.0.1:5000/convert-pdf", formData);
+            const data = response.data;
+            return data.image_url;
+        } catch (e) {
+            console.error(e);
+        }
+    };
 
     return (
         <>
@@ -255,7 +271,7 @@ function Course() {
                     <div className = "resourceCards">
                         {resources ? (
                             resources?.map((resource, index) => (
-                                <ResourceCard key = {index} title = {resource.title} time = {resource.time} selectedFile = {resource.file}  />
+                                <ResourceCard key = {index} title = {resource.title} time = {resource.time} image = {resource.image} selectedFile = {resource.file}  />
                             ))
                         ) : 
                             <span className = "noneDisplay">No resources to display :(</span>
