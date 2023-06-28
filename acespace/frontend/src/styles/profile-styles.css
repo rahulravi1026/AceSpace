@@ -87,6 +87,7 @@ body {
 }
 
 .dropdown {
+    position: absolute;
     list-style: none;
     background-color: #000000;
     border-radius: 8px;
@@ -94,7 +95,7 @@ body {
     width: 35vmin;
     margin-left: 30vmin;
     margin-top: 1vmin;
-    max-height: 15vmin; /* Adjust the maximum height as needed */
+    max-height: 15vmin;
     overflow-y: auto;
 }
 

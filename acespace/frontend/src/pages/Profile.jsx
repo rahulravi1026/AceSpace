@@ -284,7 +284,7 @@ function Profile() {
                     ))}
                 </div>
             </div>
-            <div className='searchField'>
+            <div className='searchFieldCurrent'>
                 <InputField placeholder = "search by course name..." value = {currentCoursesSearchQuery} onChange = {handleCurrentCoursesSearchChange} leftColumn></InputField>
                 {currentCoursesDropdownVisible && (
                     <ul className="dropdown">
