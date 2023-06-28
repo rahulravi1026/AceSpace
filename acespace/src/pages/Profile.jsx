@@ -29,19 +29,20 @@ function Profile() {
     const [college, setCollege] = useState('');
     const [gradYear, setGradYear] = useState('');
     const [coursesTaken, setCoursesTaken] = useState([]);
+    const [currentCourses, setCurrentCourses] = useState([]);
 
-    const [searchQuery, setSearchQuery] = useState("");
-    const [searchResults, setSearchResults] = useState([]);
+    const [takenCoursesSearchQuery, setTakenCoursesSearchQuery] = useState("");
+    const [takenCoursesSearchResults, setTakenCoursesSearchResults] = useState([]);
 
-    const [dropdownVisible, setDropdownVisible] = useState(false);
+    const [currentCoursesSearchQuery, setCurrentCoursesSearchQuery] = useState("");
+    const [currentCoursesSearchResults, setCurrentCoursesSearchResults] = useState([]);
+
+    const [takenCoursesDropdownVisible, setTakenCoursesDropdownVisible] = useState(false);
+    const [currentCoursesDropdownVisible, setCurrentCoursesDropdownVisible] = useState(false);
 
     function goHome() {
         navigate("/");
     }
-
-    // function goTest() {
-    //     navigate("/test");
-    // }
 
     function logout() {
         signOut(auth);
@@ -73,6 +74,7 @@ function Profile() {
                     setCollege(userData.college);
                     setGradYear(userData.gradYear);
                     setCoursesTaken(userData.coursesTaken);
+                    setCurrentCourses(userData.currentCourses);
                     console.log(college);
                 } else {
                   console.log("No user found with the specified email.");
@@ -85,35 +87,6 @@ function Profile() {
         getExistingProfileInfo();
         // eslint-disable-next-line
 	}, [user?.email]);
-
-    // useEffect(() => {
-    //     const fetchSearchResults = async () => {
-    //       try {
-    //         const majorsRef = collection(db, "majors");
-    //         const querySnapshot = await getDocs(majorsRef);
-    //         let queryCourses = [];
-    //         querySnapshot.forEach((doc) => {
-    //             const courses = doc.data().courses;
-    //             courses.forEach((course) => {
-    //                 const combinedString = doc.id.toUpperCase() + " " + formatCourseName(course);
-    //                 if (combinedString.toLowerCase().includes(searchQuery.toLowerCase())) {
-    //                   queryCourses.push(combinedString);
-    //                 }
-    //             });
-    //         });
-    //         setSearchResults(queryCourses);
-    //       } catch (error) {
-    //         console.error('Error fetching search results:', error);
-    //       }
-    //     };
-    
-    //     if (searchQuery === '') {
-    //         setSearchResults([]);
-    //     }
-    //     else {
-    //         fetchSearchResults();
-    //     }
-    // }, [searchQuery]);
 
     useEffect(() => {
         const fetchSearchResults = async () => {
@@ -129,26 +102,61 @@ function Profile() {
                 for (const course of coursesForMajor.docs) {
                   const combinedString = doc.id.toUpperCase() + " " + formatCourseName(course.id);
                   console.log(combinedString);
-                  if (combinedString.toLowerCase().includes(searchQuery.toLowerCase())) {
+                  if (combinedString.toLowerCase().includes(takenCoursesSearchQuery.toLowerCase())) {
                     queryCourses.push(combinedString);
                   }
                 }
               }
             }
-            if(searchQuery !== '') {
-                setSearchResults(queryCourses);
+            if(takenCoursesSearchQuery !== '') {
+                setTakenCoursesSearchResults(queryCourses);
             }
           } catch (error) {
             console.error('Error fetching search results:', error);
           }
         };
       
-        if (searchQuery === '') {
-          setSearchResults([]);
+        if (takenCoursesSearchQuery === '') {
+          setTakenCoursesSearchResults([]);
         } else {
           fetchSearchResults();
         }
-      }, [searchQuery]); 
+      }, [takenCoursesSearchQuery]); 
+
+      useEffect(() => {
+        const fetchSearchResults = async () => {
+          try {
+            const majorsRef = collection(db, "majors");
+            const querySnapshot = await getDocs(majorsRef);
+            let queryCourses = [];
+      
+            for (const doc of querySnapshot.docs) {
+              const coursesForMajor = await getDocs(collection(db, "majors", doc.id, "courses"));
+      
+              if (!coursesForMajor.empty) {
+                for (const course of coursesForMajor.docs) {
+                  const combinedString = doc.id.toUpperCase() + " " + formatCourseName(course.id);
+                  console.log(combinedString);
+                  if (combinedString.toLowerCase().includes(currentCoursesSearchQuery.toLowerCase())) {
+                    queryCourses.push(combinedString);
+                  }
+                }
+              }
+            }
+            if(currentCoursesSearchQuery !== '') {
+                setCurrentCoursesSearchResults(queryCourses);
+            }
+          } catch (error) {
+            console.error('Error fetching search results:', error);
+          }
+        };
+      
+        if (currentCoursesSearchQuery === '') {
+          setCurrentCoursesSearchResults([]);
+        } else {
+          fetchSearchResults();
+        }
+      }, [currentCoursesSearchQuery]); 
 
     const handleNameChange = (event) => {
         setName(event.target.value);
@@ -166,12 +174,17 @@ function Profile() {
         setGradYear(event.target.value);
     };
 
-    const handleSearchChange = (event) => {
-        setSearchQuery(event.target.value);
-        setDropdownVisible(searchQuery.length >= 0);
+    const handleTakenCoursesSearchChange = (event) => {
+        setTakenCoursesSearchQuery(event.target.value);
+        setTakenCoursesDropdownVisible(takenCoursesSearchResults.length >= 0);
     };
 
-    const handleResultClick = (result) => {
+    const handleCurrentCoursesSearchChange = (event) => {
+        setCurrentCoursesSearchQuery(event.target.value);
+        setCurrentCoursesDropdownVisible(currentCoursesSearchResults.length >= 0);
+    };
+
+    const handleTakenCourseResultClick = (result) => {
         const nextElement = result.split(' ')[0] + ' ' + result.split(' ')[1];
         
         if (!coursesTaken.includes(nextElement)) {
@@ -179,10 +192,22 @@ function Profile() {
         }
     };
 
-    const handleCourseRemove = (course) => {
+    const handleCurrentCourseResultClick = (result) => {
+        const nextElement = result.split(' ')[0] + ' ' + result.split(' ')[1];
+        
+        if (!currentCourses.includes(nextElement)) {
+            setCurrentCourses([...currentCourses, nextElement]);
+        }
+    };
+
+    const handleTakenCourseRemove = (course) => {
         const updatedCourses = coursesTaken.filter((c) => c !== course);
         setCoursesTaken(updatedCourses);
-        console.log(coursesTaken);
+    };
+
+    const handleCurrentCourseRemove = (course) => {
+        const updatedCourses = currentCourses.filter((c) => c !== course);
+        setCurrentCourses(updatedCourses);
     };
 
     const saveFields = async () => {
@@ -194,7 +219,8 @@ function Profile() {
             email: email,
             college: college,
             gradYear: gradYear,
-            coursesTaken: coursesTaken
+            coursesTaken: coursesTaken,
+            currentCourses: currentCourses
         });
         toast.info('Your profile has been saved!', {
             theme: "dark",
@@ -233,26 +259,47 @@ function Profile() {
                 <FormLabelText leftColumn>courses taken</FormLabelText>
                 <div className="courseTitles">
                     {coursesTaken.map((course, index) => (
-                        <CourseTitle key={index} onRemove={handleCourseRemove}>{course}</CourseTitle>
+                        <CourseTitle key={index} onRemove={handleTakenCourseRemove}>{course}</CourseTitle>
                     ))}
                 </div>
             </div>
             <div className='searchField'>
-                <InputField placeholder = "search by course name..." value = {searchQuery} onChange = {handleSearchChange} leftColumn></InputField>
-                {dropdownVisible && (
+                <InputField placeholder = "search by course name..." value = {takenCoursesSearchQuery} onChange = {handleTakenCoursesSearchChange} leftColumn></InputField>
+                {takenCoursesDropdownVisible && (
                     <ul className="dropdown">
-                        {searchResults.map((result, index) => (
-                            <li className="dropdownElement" key={index} onClick={() => handleResultClick(result)}>
+                        {takenCoursesSearchResults.map((result, index) => (
+                            <li className="dropdownElement" key={index} onClick={() => handleTakenCourseResultClick(result)}>
                                 {result}
                             </li>
                         ))}
                      </ul>
                 )}
             </div>
+
+            <div className = "coursesTakenTitle">
+                <FormLabelText leftColumn>current courses</FormLabelText>
+                <div className="courseTitles">
+                    {currentCourses.map((course, index) => (
+                        <CourseTitle key={index} onRemove={handleCurrentCourseRemove}>{course}</CourseTitle>
+                    ))}
+                </div>
+            </div>
+            <div className='searchField'>
+                <InputField placeholder = "search by course name..." value = {currentCoursesSearchQuery} onChange = {handleCurrentCoursesSearchChange} leftColumn></InputField>
+                {currentCoursesDropdownVisible && (
+                    <ul className="dropdown">
+                        {currentCoursesSearchResults.map((result, index) => (
+                            <li className="dropdownElement" key={index} onClick={() => handleCurrentCourseResultClick(result)}>
+                                {result}
+                            </li>
+                        ))}
+                     </ul>
+                )}
+            </div>
+            
             <div className = "saveButton">
                 <PrimaryButton onClick={saveFields}>Save</PrimaryButton>
             </div>
-            {/* <PrimaryButton onClick = {logout}>Logout</PrimaryButton> */}
         </div>
     );
 }

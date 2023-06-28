@@ -59,7 +59,8 @@ function SignIn() {
                       email: user?.email,
                       college: null,
                       gradYear: null,
-                      coursesTaken: []
+                      coursesTaken: [],
+                      currentCourses: []
                     });
                     console.log("Document written with ID: ", docRef.id);
                   } catch (e) {

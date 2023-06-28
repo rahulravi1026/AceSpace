@@ -113,5 +113,5 @@ body {
     position: fixed;
     left: 50%;
     transform: translateX(-50%);
-    bottom: 15vmin;
+    bottom: 10vmin;
 }
