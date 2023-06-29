@@ -22,6 +22,7 @@ import ResourcePopupForm from '../components/ResourcePopupForm';
 import TipCard from '../components/TipCard';
 import ResourceCard from '../components/ResourceCard';
 import axios from 'axios';
+import TipEditPopupForm from '../components/TipEditPopupForm';
 
 function Course() {
     const { courseName } = useParams();
@@ -42,8 +43,17 @@ function Course() {
     const [isTipPopupOpen, setIsTipPopupOpen] = useState(false);
     const [isResourcePopupOpen, setIsResourcePopupOpen] = useState(false);
 
+    const [isTipEditPopupOpen, setIsTipEditPopupOpen] = useState(false);
+
     const [isTipsVisible, setIsTipsVisible] = useState(false);
     const [isResourcesVisible, setIsResourcesVisible] = useState(false);
+
+    const [tipID, setTipID] = useState('');
+    const [oldTitle, setOldTitle] = useState('');
+    const [oldTime, setOldTime] = useState('');
+    const [oldText, setOldText] = useState('');
+
+    const { v4: uuidv4 } = require('uuid');
 
     const toggleTipPopup = () => {
       setIsTipPopupOpen(!isTipPopupOpen);
@@ -52,6 +62,18 @@ function Course() {
     const toggleResourcePopup = () => {
         setIsResourcePopupOpen(!isResourcePopupOpen);
     };  
+
+    const openTipEditPopup = (oldID, oldTitle, oldTime, oldText) => {
+        setIsTipEditPopupOpen(true);
+        setTipID(oldID);
+        setOldTitle(oldTitle);
+        setOldTime(oldTime);
+        setOldText(oldText);
+    };
+
+    const closeTipEditPopup = () => {
+        setIsTipEditPopupOpen(false);
+    };
 
     function goHome() {
         navigate("/");
@@ -151,8 +173,11 @@ function Course() {
 
         const usersRef = collection(db, "users");
         const querySnapshot = await getDocs(query(usersRef, where("email", "==", user?.email)));
+
+        const uniqueId = uuidv4();
+
         await updateDoc(professorRef, {
-            tips: arrayUnion({title: newTitle, time: newTime, text: newText, user: querySnapshot.docs[0].data().email})
+            tips: arrayUnion({id: uniqueId, title: newTitle, time: newTime, text: newText, votes: 0, upvoteUsers: null, downvoteUsers: null, user: querySnapshot.docs[0].data().email})
         });
 
         const professorData = (await getDoc(doc(db, "majors", major, "courses", fullCourse, "professors", professorSelected))).data();
@@ -210,7 +235,6 @@ function Course() {
 
     const handleResourcesClick = () => {
         setIsResourcesVisible(!isResourcesVisible);
-        console.log(resources);
     }
 
     const convertPDFToImage = async (formData) => {
@@ -222,6 +246,117 @@ function Course() {
             console.error(e);
         }
     };
+
+    const handleUpvote = async (id) => {
+        const professorRef = await doc (db, "majors", major, "courses", fullCourse, "professors", professorSelected);
+        const professorSnapshot = await getDoc(professorRef);
+        if(professorSnapshot.exists()) {
+            const tips = professorSnapshot.data().tips;
+            const tipToUpdate = tips.find((tip) => tip.id === id);
+
+            if(!tipToUpdate?.upvoteUsers?.includes(user?.email)) {
+                if(tipToUpdate?.downvoteUsers?.includes(user?.email)) {
+                    tipToUpdate.votes += 2;
+                    tipToUpdate.downvoteUsers = tipToUpdate.downvoteUsers.filter((email) => email !== user?.email);
+                }
+                else {
+                    tipToUpdate.votes += 1;
+                }
+
+                if(!tipToUpdate.upvoteUsers) {
+                    tipToUpdate.upvoteUsers = [user?.email];
+                }
+                else {
+                    tipToUpdate.upvoteUsers.push(user?.email);
+                }
+
+            }
+            else {
+                tipToUpdate.votes -= 1;
+                tipToUpdate.upvoteUsers = tipToUpdate.upvoteUsers.filter((email) => email !== user?.email);
+            }
+
+            setTips(tips);
+            await updateDoc(professorRef, { tips });
+        }
+    };
+
+    const handleDownvote = async (id) => {
+        const professorRef = await doc (db, "majors", major, "courses", fullCourse, "professors", professorSelected);
+        const professorSnapshot = await getDoc(professorRef);
+        if(professorSnapshot.exists()) {
+            const tips = professorSnapshot.data().tips;
+            const tipToUpdate = tips.find((tip) => tip.id === id);
+
+            if(!tipToUpdate?.downvoteUsers?.includes(user?.email)) {
+                if(tipToUpdate?.upvoteUsers?.includes(user?.email)) {
+                    tipToUpdate.votes -= 2;
+                    tipToUpdate.upvoteUsers = tipToUpdate.upvoteUsers.filter((email) => email !== user?.email);
+                }
+                else {
+                    tipToUpdate.votes -= 1;
+                }
+
+                if(!tipToUpdate.downvoteUsers) {
+                    tipToUpdate.downvoteUsers = [user?.email];
+                }
+                else {
+                    tipToUpdate.downvoteUsers.push(user?.email);
+                }
+
+            }
+            else {
+                tipToUpdate.votes += 1;
+                tipToUpdate.downvoteUsers = tipToUpdate.downvoteUsers.filter((email) => email !== user?.email);
+            }
+
+            setTips(tips);
+            await updateDoc(professorRef, { tips });
+        }
+    };
+
+    const handleTipEdit = (id, title, time, text) => {
+        openTipEditPopup(id, title, time, text);
+    }
+
+    const handleTipEditSubmit = async (newTitle, newTime, newText) => {
+        const professorRef = await doc (db, "majors", major, "courses", fullCourse, "professors", professorSelected);
+        const professorSnapshot = await getDoc(professorRef);
+        if(professorSnapshot.exists()) {
+            const tips = professorSnapshot.data().tips;
+            const tipToUpdate = tips.find((tip) => tip.id === tipID);
+            console.log(tipToUpdate);
+            
+            tipToUpdate.title = newTitle;
+            tipToUpdate.time = newTime;
+            tipToUpdate.text = newText;
+
+            setTips(tips);
+            await updateDoc(professorRef, { tips });
+        }
+        closeTipEditPopup();
+        toast.info('Your tip has been saved!', {
+            theme: "dark",
+            icon: ({theme, type}) =>  <img src={infoIcon} alt="Info Icon"/>,
+        });
+    }
+
+    const handleTipDelete = async () => {
+        const professorRef = await doc (db, "majors", major, "courses", fullCourse, "professors", professorSelected);
+        const professorSnapshot = await getDoc(professorRef);
+        if(professorSnapshot.exists()) {
+            const tips = professorSnapshot.data().tips;
+            const updatedTips = tips.filter((tip) => tip.id !== tipID);
+
+            setTips(updatedTips);
+            await updateDoc(professorRef, { tips : updatedTips });
+        }
+        closeTipEditPopup();
+        toast.info('Your tip has been deleted!', {
+            theme: "dark",
+            icon: ({theme, type}) =>  <img src={infoIcon} alt="Info Icon"/>,
+        });
+    }
 
     return (
         <>
@@ -269,7 +404,7 @@ function Course() {
             {isResourcesVisible && 
                 <div className = "coursesTakenTitle">
                     <div className = "resourceCards">
-                        {resources ? (
+                        {(resources && resources.length > 0) ? (
                             resources?.map((resource, index) => (
                                 <ResourceCard key = {index} title = {resource.title} time = {resource.time} image = {resource.image} selectedFile = {resource.file}  />
                             ))
@@ -286,9 +421,12 @@ function Course() {
             {isTipsVisible && 
                 <div className = "coursesTakenTitle">
                     <div className = "tipCards">
-                        {tips ? (
+                        {(tips && tips.length > 0) ? (
                             tips?.map((tip, index) => (
-                                <TipCard key = {index} title = {tip.title} time = {tip.time} text = {tip.text}  />
+                                <TipCard key = {index} id = {tip.id} title = {tip.title} time = {tip.time} text = {tip.text} votes = {tip.votes} 
+                                onUpvote={handleUpvote} onDownvote = {handleDownvote} userUpvoted = {tip.upvoteUsers?.includes(user?.email)} 
+                                userDownvoted = {tip.downvoteUsers?.includes(user?.email)} userUploaded = {tip.user === user?.email}
+                                onEdit = { () => handleTipEdit(tip.id, tip.title, tip.time, tip.text)}/>
                             ))
                         ) :
                             <span className = "noneDisplay">No tips to display :(</span>
@@ -298,6 +436,8 @@ function Course() {
             }
             {isTipPopupOpen && <TipPopupForm handleSubmit={handleTipSubmit} handleCancel={toggleTipPopup} />}
             {isResourcePopupOpen && <ResourcePopupForm handleSubmit={handleResourceSubmit} handleCancel={toggleResourcePopup} />}
+            {isTipEditPopupOpen && <TipEditPopupForm oldTitle = {oldTitle} oldTime = {oldTime} oldText = {oldText} 
+            handleSubmit = {(newTitle, newTime, newText) => handleTipEditSubmit(newTitle, newTime, newText)} handleDelete={handleTipDelete} />}
         </div>
         )}
         </>

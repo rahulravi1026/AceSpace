@@ -3,7 +3,7 @@ from pdf2image import convert_from_path, convert_from_bytes
 import os
 import firebase_admin
 from firebase_admin import credentials, storage
-from flask_cors import CORS
+from flask_cors import CORS, cross_origin
 import io
 
 app = Flask(__name__)
@@ -14,6 +14,7 @@ cred = credentials.Certificate(service_account_path)
 firebase_admin.initialize_app(cred, {'storageBucket': 'ace-space-353cb.appspot.com'})
 
 @app.route('/convert-pdf', methods=['POST'])
+@cross_origin(origins=['http://localhost:3000'])
 def convert_pdf_to_image():    
     file = request.files['pdf']
 

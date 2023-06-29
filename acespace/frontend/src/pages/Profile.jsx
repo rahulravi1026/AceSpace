@@ -235,7 +235,6 @@ function Profile() {
                 <HeaderText className = "createProfileText">create your <span className = "primaryText">profile</span></HeaderText>
                 <nav className = "navBar">
                     <ButtonText onClick={goHome}>Home</ButtonText>
-                    {/* <ButtonText onClick={goTest}>Test</ButtonText> */}
                     <ButtonText onClick={logout}>Logout</ButtonText>
                 </nav>
             </div>
