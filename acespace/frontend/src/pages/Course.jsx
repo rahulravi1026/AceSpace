@@ -239,7 +239,12 @@ function Course() {
 
     const convertPDFToImage = async (formData) => {
         try {
-            const response = await axios.post("http://127.0.0.1:5000/convert-pdf", formData);
+            const response = await axios.post("http://127.0.0.1:5000/convert-pdf", formData, {
+                // headers: {
+                //     'Content-Type': 'multipart/form-data',
+                //     'Access-Control-Allow-Credentials': true
+                //   },
+            });
             const data = response.data;
             return data.image_url;
         } catch (e) {
@@ -256,11 +261,7 @@ function Course() {
 
             if(!tipToUpdate?.upvoteUsers?.includes(user?.email)) {
                 if(tipToUpdate?.downvoteUsers?.includes(user?.email)) {
-                    tipToUpdate.votes += 2;
                     tipToUpdate.downvoteUsers = tipToUpdate.downvoteUsers.filter((email) => email !== user?.email);
-                }
-                else {
-                    tipToUpdate.votes += 1;
                 }
 
                 if(!tipToUpdate.upvoteUsers) {
@@ -269,12 +270,12 @@ function Course() {
                 else {
                     tipToUpdate.upvoteUsers.push(user?.email);
                 }
-
             }
             else {
-                tipToUpdate.votes -= 1;
                 tipToUpdate.upvoteUsers = tipToUpdate.upvoteUsers.filter((email) => email !== user?.email);
             }
+
+            tipToUpdate.votes = (tipToUpdate.upvoteUsers?.length || 0) - (tipToUpdate.downvoteUsers?.length || 0);
 
             setTips(tips);
             await updateDoc(professorRef, { tips });
