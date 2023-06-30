@@ -23,12 +23,6 @@ def convert_pdf_to_image():
 
     pdf_file = io.BytesIO(file_data)
 
-    # Use PyPDF2 to extract text from the PDF
-    # pdf_reader = PyPDF2.PdfReader(pdf_file)
-    # page = pdf_reader.pages[0]  # Extract text from the first page
-    # text = page.extract_text()
-    # print(text)
-
     images = convert_from_bytes(file_data)
     first_image = images[0]
 
@@ -44,7 +38,7 @@ def convert_pdf_to_image():
     image_url = blob.public_url
 
     response = jsonify({'image_url': image_url})
-    # response.headers.add('Access-Control-Allow-Origin', 'http://localhost:3000')
+    response.headers.add('Access-Control-Allow-Origin', 'http://localhost:3000')
     response.headers.add('Access-Control-Allow-Credentials', 'true')
     
     return response 
