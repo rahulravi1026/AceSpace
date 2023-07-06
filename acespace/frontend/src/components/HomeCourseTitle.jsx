@@ -1,4 +1,5 @@
 import styled from 'styled-components';
+import questionIcon from '../assets/question-icon.png';
 
 const RectangleContainer = styled.div`
   display: flex;
@@ -23,6 +24,16 @@ const Text = styled.span`
   font-weight: bold;
 `;
 
+const QuestionButton = styled.img`
+  width: 3vmin;
+  height: 3vmin;
+  background-color: transparent;
+  border: none;
+  cursor: pointer;
+  font-size: 3.5vmin;
+  color: #c35cf7;
+`;
+
 const CrossButton = styled.button`
   background-color: transparent;
   border: none;
@@ -44,7 +55,7 @@ const HomeCourseTitle = ({children, onRemove}) => {
         <Text>Introduction to Computer Science</Text>
       </div>
       <div> 
-        <CrossButton>&#63;</CrossButton>
+        <QuestionButton src = {questionIcon}></QuestionButton>
         <CrossButton onClick={handleRemove}>&times;</CrossButton> 
       </div>
     </RectangleContainer>
