@@ -6,6 +6,7 @@ import PrimaryButton from '../components/PrimaryButton';
 import ButtonText from '../components/ButtonText';
 // import logo from '../assets/logo.png';
 import infoIcon from '../assets/info-icon.png';
+import errorIcon from '../assets/error-icon.png';
 
 import '../styles/profile-styles.css';
 import { signOut } from 'firebase/auth';
@@ -101,7 +102,6 @@ function Profile() {
               if (!coursesForMajor.empty) {
                 for (const course of coursesForMajor.docs) {
                   const combinedString = doc.id.toUpperCase() + " " + formatCourseName(course.id);
-                  console.log(combinedString);
                   if (combinedString.toLowerCase().includes(takenCoursesSearchQuery.toLowerCase())) {
                     queryCourses.push(combinedString);
                   }
@@ -116,11 +116,7 @@ function Profile() {
           }
         };
       
-        if (takenCoursesSearchQuery === '') {
-          setTakenCoursesSearchResults([]);
-        } else {
-          fetchSearchResults();
-        }
+        fetchSearchResults();
       }, [takenCoursesSearchQuery]); 
 
       useEffect(() => {
@@ -151,11 +147,7 @@ function Profile() {
           }
         };
       
-        if (currentCoursesSearchQuery === '') {
-          setCurrentCoursesSearchResults([]);
-        } else {
-          fetchSearchResults();
-        }
+        fetchSearchResults();
       }, [currentCoursesSearchQuery]); 
 
     const handleNameChange = (event) => {
@@ -176,26 +168,40 @@ function Profile() {
 
     const handleTakenCoursesSearchChange = (event) => {
         setTakenCoursesSearchQuery(event.target.value);
-        setTakenCoursesDropdownVisible(takenCoursesSearchResults.length >= 0);
+        setTakenCoursesDropdownVisible(event.target.value !== '' && takenCoursesSearchResults.length > 0);
     };
 
     const handleCurrentCoursesSearchChange = (event) => {
         setCurrentCoursesSearchQuery(event.target.value);
-        setCurrentCoursesDropdownVisible(currentCoursesSearchResults.length >= 0);
+        setCurrentCoursesDropdownVisible(event.target.value !== '' && currentCoursesSearchResults.length > 0);
     };
 
     const handleTakenCourseResultClick = (result) => {
         const nextElement = result.split(' ')[0] + ' ' + result.split(' ')[1];
         
-        if (!coursesTaken.includes(nextElement)) {
+        if (currentCourses.includes(nextElement)) {
+            toast.info('Conflicting current & taken courses have been selected!', {
+                theme: "dark",
+                icon: ({theme, type}) =>  <img src={errorIcon} alt="Error Icon"/>,
+            });
+        }
+
+        else if (!coursesTaken.includes(nextElement)) {
             setCoursesTaken([...coursesTaken, nextElement]);
         }
+        
     };
 
     const handleCurrentCourseResultClick = (result) => {
         const nextElement = result.split(' ')[0] + ' ' + result.split(' ')[1];
-        
-        if (!currentCourses.includes(nextElement)) {
+
+        if (coursesTaken.includes(nextElement)) {
+            toast.info('Conflicting current & taken courses selected!', {
+                theme: "dark",
+                icon: ({theme, type}) =>  <img src={errorIcon} alt="Error Icon"/>,
+            });
+        }
+        else if (!currentCourses.includes(nextElement)) {
             setCurrentCourses([...currentCourses, nextElement]);
         }
     };
