@@ -38,7 +38,7 @@ def convert_pdf_to_image():
     image_url = blob.public_url
 
     response = jsonify({'image_url': image_url})
-    response.headers.add('Access-Control-Allow-Origin', 'http://localhost:3000')
+    # response.headers.add('Access-Control-Allow-Origin', 'http://localhost:3000')
     response.headers.add('Access-Control-Allow-Credentials', 'true')
     
     return response 
