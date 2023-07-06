@@ -7,9 +7,14 @@ import { signOut } from 'firebase/auth';
 import { auth, db } from "../firebaseConfig";
 import { useNavigate } from 'react-router-dom';
 import { useAuthState } from "react-firebase-hooks/auth";
-import { collection, getDocs, query, where } from "firebase/firestore"; 
+import { collection, getDocs, doc, updateDoc, query, where } from "firebase/firestore"; 
 import { useEffect, useState } from 'react';
 import SearchBar from '../components/SearchBar';
+import infoIcon from '../assets/info-icon.png';
+import { toast } from 'react-toastify';
+import 'react-toastify/dist/ReactToastify.css';
+import '../styles/toast-styles.css';
+import StyledToastContainer from '../components/StyledToastContainer';
 
 function Home() {
     const navigate = useNavigate();
@@ -44,6 +49,16 @@ function Home() {
         return convertedWords.join(' ');
     }
 
+    const formatCourseTitle = (courseName) => {
+      const words = courseName.split(' ');
+      const convertedWords = words.map((word, index) => {
+          const firstLetter = word.charAt(0).toUpperCase();
+          const restOfWord = word.slice(1).toLowerCase();
+          return firstLetter + restOfWord;
+      });
+      return convertedWords.join(' ');
+  }
+
     const handleSearchChange = (event) => {
         setSearchQuery(event.target.value);
         setDropdownVisible(searchQuery.length >= 0);
@@ -69,44 +84,6 @@ function Home() {
         getExistingProfileInfo();
         // eslint-disable-next-line
 	}, [user?.email]);
-
-    // useEffect(() => {
-    //     const fetchSearchResults = async () => {
-    //       try {
-    //         const majorsRef = collection(db, "majors");
-    //         const querySnapshot = await getDocs(majorsRef);
-    //         let queryCourses = [];
-    //         for (const doc of querySnapshot.docs) {
-    //             const coursesForMajor = await getDocs(collection(db, "majors", doc.id, "courses"));
-    //             if(!coursesForMajor.empty) {
-    //                 for (const course of coursesForMajor.docs) {
-    //                     const combinedString = doc.id.toUpperCase() + " " + formatCourseName(course.id);
-    //                     console.log(combinedString);
-    //                     if(combinedString.toLowerCase().includes(searchQuery.toLowerCase())) {
-    //                         queryCourses.push(combinedString);
-    //                     }
-    //                 });
-    //             }
-    //             // courses.forEach((course) => {
-    //             //     const combinedString = doc.id.toUpperCase() + " " + formatCourseName(course);
-    //             //     if (combinedString.toLowerCase().includes(searchQuery.toLowerCase())) {
-    //             //       queryCourses.push(combinedString);
-    //             //     }
-    //             // });
-    //         });
-    //         setSearchResults(queryCourses);
-    //       } catch (error) {
-    //         console.error('Error fetching search results:', error);
-    //       }
-    //     };
-    
-    //     if (searchQuery === '') {
-    //         setSearchResults([]);
-    //     }
-    //     else {
-    //         fetchSearchResults();
-    //     }
-    // }, [searchQuery]);
 
     useEffect(() => {
         const fetchSearchResults = async () => {
@@ -161,13 +138,42 @@ function Home() {
         return str;
     }
 
+    const getCourseName = async (course) => {
+      const major = extractMajor(course).slice(0,-1).toLowerCase();
+      const coursesForMajor = await getDocs(collection(db, "majors", major, "courses"));
+      if(!coursesForMajor.empty) {
+        for (const c of coursesForMajor.docs) {
+          if(c.id.split(' ')[0].toLowerCase() === extractCourse(course).split(' ')[0].toLowerCase()) {
+            return formatCourseTitle(c.id.split(" ").slice(1).join(" "));
+          }
+        }
+      }
+    };
+
     const handleResultClick = (result) => {
         const courseName = extractMajor(result).slice(0,-1) + ' ' + extractCourse(result).split(' ')[0];
         goToCourse(courseName);
     };
 
+    const handleCurrentCourseRemove = async (course) => {
+      const updatedCourses = currentCourses.filter((c) => c !== course);
+      setCurrentCourses(updatedCourses);
+
+      const usersRef = collection(db, "users");
+      const querySnapshot = await getDocs(query(usersRef, where("email", "==", user?.email)));
+      const userRef = doc(db, "users", querySnapshot.docs[0].id);
+      await updateDoc(userRef, {
+          currentCourses: updatedCourses
+      });
+       toast.info('Your profile has been saved!', {
+          theme: "dark",
+          icon: ({theme, type}) =>  <img src={infoIcon} alt="Info Icon"/>,
+      });
+    };
+
     return (
         <div className = "homePage">
+            <StyledToastContainer position="top-left" theme="dark"/>
             <div className = "header">
                 <HeaderText className = "yourHomeText">this is your <span className = "primaryText">home</span></HeaderText>
                 <nav className = "navBar">
@@ -188,11 +194,10 @@ function Home() {
                 )}
             </div>
             {currentCourses?.map((currentCourse, index) => (
-                <HomeCourseTitle key = {index} onClick={(e) => goToCourse(e.target.innerText)}>{currentCourse}</HomeCourseTitle>
+                <HomeCourseTitle key = {index} goToCourse={() => goToCourse(currentCourse)} getCourseName={getCourseName} onRemove={handleCurrentCourseRemove}>{currentCourse}</HomeCourseTitle>
             ))}
         </div>
     );
 }
 
 export default Home;
-
