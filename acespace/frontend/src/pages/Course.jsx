@@ -180,14 +180,28 @@ function Course() {
             tips: arrayUnion({id: uniqueId, title: newTitle, time: newTime, text: newText, votes: 0, upvoteUsers: null, downvoteUsers: null, user: querySnapshot.docs[0].data().email})
         });
 
-        const professorData = (await getDoc(doc(db, "majors", major, "courses", fullCourse, "professors", professorSelected))).data();
-        setTips(professorData?.tips);
+        // const professorData = (await getDoc(doc(db, "majors", major, "courses", fullCourse, "professors", professorSelected))).data();
+        const professorSnapshot = await getDoc(professorRef);
+        if(professorSnapshot.exists()) {
+            const tips = professorSnapshot.data().tips;
+            tips.sort((a, b) => b.votes - a.votes);
+            setTips(tips);
+            await updateDoc(professorRef, { tips });
+        }
+       // setTips(professorData?.tips);
         setIsTipPopupOpen(!isTipPopupOpen);
         toast.info('Your tip has been added!', {
             theme: "dark",
             icon: ({theme, type}) =>  <img src={infoIcon} alt="Info Icon"/>,
         });
     }
+
+    function generateUniqueFilename(filename) {
+        const timestamp = Date.now()
+        const randomChars = Math.random().toString(36).substring(2,8);
+        const uniqueFileName = `${filename}_${timestamp}_${randomChars}`;
+        return uniqueFileName;
+    };
 
     const handleResourceSubmit = async (newTitle, newTime, newFile) => {
         const professorRef = await doc(db, "majors", major, "courses", fullCourse, "professors", professorSelected);
@@ -198,36 +212,43 @@ function Course() {
         const formData = new FormData();
         formData.append('pdf', newFile);
         
-        const imageURL = await convertPDFToImage(formData);
+        const imageConversionPromise = convertPDFToImage(formData);
 
-        console.log(newFile.name);
-        const storageRef = ref(storage, newFile.name);
-        uploadBytes(storageRef, newFile)
-            .then(() => {
-                getDownloadURL(storageRef)
-                .then(async (url) => {
-                    console.log("File URL: ", url);
-                    await updateDoc(professorRef, {
-                        resources: arrayUnion({title: newTitle, time: newTime, file: url, image: imageURL, user: querySnapshot.docs[0].data().email})
-                    })
+        const uniqueFileName = generateUniqueFilename(newFile.name);
+        console.log(uniqueFileName);
+        const storageRef = ref(storage, uniqueFileName);
+        const uploadPromise = uploadBytes(storageRef, newFile)
+            .then(() => getDownloadURL(storageRef));
 
-                    const professorData = (await getDoc(doc(db, "majors", major, "courses", fullCourse, "professors", professorSelected))).data();
-                    setResources(professorData?.resources);
-                    toast.info('Your resource has been added!', {
-                        theme: "dark",
-                        icon: ({theme, type}) =>  <img src={infoIcon} alt="Info Icon"/>,
-                    });
-                })
-                .catch((e) => {
-                    console.error("Error getting file URL: ", e)
-                })
-            })
-            .catch((e) => {
-                console.error("Error uploading file: ", e);
-            })
+        try {
+            const [imageURL, downloadURL] = await Promise.all([imageConversionPromise, uploadPromise]);
         
-        setIsResourcePopupOpen(!isResourcePopupOpen);
+            console.log("File URL: ", imageURL);
+            const uniqueId = uuidv4();
+
+            await updateDoc(professorRef, {
+                resources: arrayUnion({id: uniqueId, title: newTitle, time: newTime, file: downloadURL, image: imageURL, votes: 0, upvoteUsers: null, downvoteUsers: null, user: querySnapshot.docs[0].data().email})
+            })
+
+            // const professorData = (await getDoc(doc(db, "majors", major, "courses", fullCourse, "professors", professorSelected))).data();
+            const professorSnapshot = await getDoc(professorRef);
+            if(professorSnapshot.exists()) {
+                const resources = professorSnapshot.data().resources;
+                resources.sort((a, b) => b.votes - a.votes);
+                setResources(resources);
+                await updateDoc(professorRef, { resources });
+            }
+            // setResources(professorData?.resources);
+            setIsResourcePopupOpen(!isResourcePopupOpen);
+            toast.info('Your resource has been added!', {
+                theme: "dark",
+                icon: ({theme, type}) =>  <img src={infoIcon} alt="Info Icon"/>,
+            });
+          } catch (error) {
+            console.error("Error uploading file or getting file URL: ", error);
+          }
     }
+
 
     const handleTipsClick = () => {
         setIsTipsVisible(!isTipsVisible);
@@ -252,7 +273,7 @@ function Course() {
         }
     };
 
-    const handleUpvote = async (id) => {
+    const handleTipUpvote = async (id) => {
         const professorRef = await doc (db, "majors", major, "courses", fullCourse, "professors", professorSelected);
         const professorSnapshot = await getDoc(professorRef);
         if(professorSnapshot.exists()) {
@@ -277,12 +298,13 @@ function Course() {
 
             tipToUpdate.votes = (tipToUpdate.upvoteUsers?.length || 0) - (tipToUpdate.downvoteUsers?.length || 0);
 
+            tips.sort((a, b) => b.votes - a.votes);
             setTips(tips);
             await updateDoc(professorRef, { tips });
         }
     };
 
-    const handleDownvote = async (id) => {
+    const handleTipDownvote = async (id) => {
         const professorRef = await doc (db, "majors", major, "courses", fullCourse, "professors", professorSelected);
         const professorSnapshot = await getDoc(professorRef);
         if(professorSnapshot.exists()) {
@@ -291,11 +313,7 @@ function Course() {
 
             if(!tipToUpdate?.downvoteUsers?.includes(user?.email)) {
                 if(tipToUpdate?.upvoteUsers?.includes(user?.email)) {
-                    tipToUpdate.votes -= 2;
                     tipToUpdate.upvoteUsers = tipToUpdate.upvoteUsers.filter((email) => email !== user?.email);
-                }
-                else {
-                    tipToUpdate.votes -= 1;
                 }
 
                 if(!tipToUpdate.downvoteUsers) {
@@ -304,13 +322,14 @@ function Course() {
                 else {
                     tipToUpdate.downvoteUsers.push(user?.email);
                 }
-
             }
             else {
-                tipToUpdate.votes += 1;
                 tipToUpdate.downvoteUsers = tipToUpdate.downvoteUsers.filter((email) => email !== user?.email);
             }
 
+            tipToUpdate.votes = (tipToUpdate.upvoteUsers?.length || 0) - (tipToUpdate.downvoteUsers?.length || 0);
+
+            tips.sort((a, b) => b.votes - a.votes);
             setTips(tips);
             await updateDoc(professorRef, { tips });
         }
@@ -358,6 +377,103 @@ function Course() {
             icon: ({theme, type}) =>  <img src={infoIcon} alt="Info Icon"/>,
         });
     }
+
+    const handleResourceUpvote = async (id) => {
+        const professorRef = await doc (db, "majors", major, "courses", fullCourse, "professors", professorSelected);
+        const professorSnapshot = await getDoc(professorRef);
+        if(professorSnapshot.exists()) {
+            const resources = professorSnapshot.data().resources;
+            const resourceToUpdate = resources.find((resource) => resource.id === id);
+
+            if(!resourceToUpdate?.upvoteUsers?.includes(user?.email)) {
+                if(resourceToUpdate?.downvoteUsers?.includes(user?.email)) {
+                    resourceToUpdate.downvoteUsers = resourceToUpdate.downvoteUsers.filter((email) => email !== user?.email);
+                }
+
+                if(!resourceToUpdate.upvoteUsers) {
+                    resourceToUpdate.upvoteUsers = [user?.email];
+                }
+                else {
+                    resourceToUpdate.upvoteUsers.push(user?.email);
+                }
+            }
+            else {
+                resourceToUpdate.upvoteUsers = resourceToUpdate.upvoteUsers.filter((email) => email !== user?.email);
+            }
+
+            resourceToUpdate.votes = (resourceToUpdate.upvoteUsers?.length || 0) - (resourceToUpdate.downvoteUsers?.length || 0);
+
+            resources.sort((a, b) => b.votes - a.votes);
+            setResources(resources);
+            await updateDoc(professorRef, { resources });
+        }
+    };
+
+    const handleResourceDownvote = async (id) => {
+        const professorRef = await doc (db, "majors", major, "courses", fullCourse, "professors", professorSelected);
+        const professorSnapshot = await getDoc(professorRef);
+        if(professorSnapshot.exists()) {
+            const resources = professorSnapshot.data().resources;
+            const resourceToUpdate = resources.find((resource) => resource.id === id);
+
+            if(!resourceToUpdate?.downvoteUsers?.includes(user?.email)) {
+                if(resourceToUpdate?.upvoteUsers?.includes(user?.email)) {
+                    resourceToUpdate.upvoteUsers = resourceToUpdate.upvoteUsers.filter((email) => email !== user?.email);
+                }
+
+                if(!resourceToUpdate.downvoteUsers) {
+                    resourceToUpdate.downvoteUsers = [user?.email];
+                }
+                else {
+                    resourceToUpdate.downvoteUsers.push(user?.email);
+                }
+            }
+            else {
+                resourceToUpdate.downvoteUsers = resourceToUpdate.downvoteUsers.filter((email) => email !== user?.email);
+            }
+
+            resourceToUpdate.votes = (resourceToUpdate.upvoteUsers?.length || 0) - (resourceToUpdate.downvoteUsers?.length || 0);
+
+            resources.sort((a, b) => b.votes - a.votes);
+            setResources(resources);
+            await updateDoc(professorRef, { resources });
+        }
+    };
+
+    const handleResourceDelete = async (id) => {
+        const professorRef = await doc (db, "majors", major, "courses", fullCourse, "professors", professorSelected);
+        const professorSnapshot = await getDoc(professorRef);
+        if(professorSnapshot.exists()) {
+            const resources = professorSnapshot.data().resources;
+            const updatedResources = await Promise.all(resources.map(async (resource) => {
+                if (resource.id === id) {
+                    if (resource.file && resource.image) {
+                        try {
+                            const response = await axios.post("http://127.0.0.1:5000/delete-file", {
+                                file_url: resource.file,
+                                image_url: resource.image
+                            });
+                            const data = response.data;
+                            console.log(data);
+                        } catch (e) {
+                            console.error(e);
+                        }
+                    }
+                    return null;
+                }
+                return resource;
+            }));
+
+            const filteredResources = updatedResources.filter(resource => resource !== null);
+
+            setResources(filteredResources);
+            await updateDoc(professorRef, { resources : filteredResources });
+            toast.info('Your resource has been deleted!', {
+                theme: "dark",
+                icon: ({theme, type}) =>  <img src={infoIcon} alt="Info Icon"/>,
+            });
+        }
+    };
 
     return (
         <>
@@ -407,7 +523,9 @@ function Course() {
                     <div className = "resourceCards">
                         {(resources && resources.length > 0) ? (
                             resources?.map((resource, index) => (
-                                <ResourceCard key = {index} title = {resource.title} time = {resource.time} image = {resource.image} selectedFile = {resource.file}  />
+                                <ResourceCard key = {index} id = {resource.id} title = {resource.title} time = {resource.time} image = {resource.image} selectedFile = {resource.file}  
+                                votes = {resource.votes} onUpvote = {handleResourceUpvote} onDownvote = {handleResourceDownvote} userUpvoted = {resource.upvoteUsers?.includes(user?.email)}
+                                userDownvoted = {resource.downvoteUsers?.includes(user?.email)} userUploaded = {resource.user === user?.email} onDelete = {handleResourceDelete}/>
                             ))
                         ) : 
                             <span className = "noneDisplay">No resources to display :(</span>
@@ -425,7 +543,7 @@ function Course() {
                         {(tips && tips.length > 0) ? (
                             tips?.map((tip, index) => (
                                 <TipCard key = {index} id = {tip.id} title = {tip.title} time = {tip.time} text = {tip.text} votes = {tip.votes} 
-                                onUpvote={handleUpvote} onDownvote = {handleDownvote} userUpvoted = {tip.upvoteUsers?.includes(user?.email)} 
+                                onUpvote={handleTipUpvote} onDownvote = {handleTipDownvote} userUpvoted = {tip.upvoteUsers?.includes(user?.email)} 
                                 userDownvoted = {tip.downvoteUsers?.includes(user?.email)} userUploaded = {tip.user === user?.email}
                                 onEdit = { () => handleTipEdit(tip.id, tip.title, tip.time, tip.text)}/>
                             ))
