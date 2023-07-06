@@ -1,6 +1,6 @@
 import HeaderText from '../components/HeaderText';
 import ButtonText from '../components/ButtonText';
-import PrimaryButton from '../components/PrimaryButton';
+import HomeCourseTitle from '../components/HomeCourseTitle';
 
 import '../styles/home-styles.css';
 import { signOut } from 'firebase/auth';
@@ -14,7 +14,7 @@ import SearchBar from '../components/SearchBar';
 function Home() {
     const navigate = useNavigate();
     const [user] = useAuthState(auth);
-    const [coursesTaken, setCoursesTaken] = useState(null);
+    const [currentCourses, setCurrentCourses] = useState(null);
     const [searchQuery, setSearchQuery] = useState("");
     const [searchResults, setSearchResults] = useState([]);
     const [dropdownVisible, setDropdownVisible] = useState(false);
@@ -57,7 +57,7 @@ function Home() {
               
                 if (!querySnapshot.empty) {
                     const userData = querySnapshot.docs[0].data();
-                    setCoursesTaken(userData.coursesTaken);
+                    setCurrentCourses(userData.currentCourses);
                 } else {
                   console.log("No user found with the specified email.");
                 }
@@ -187,8 +187,8 @@ function Home() {
                      </ul>
                 )}
             </div>
-            {coursesTaken?.map((courseTaken, index) => (
-                <PrimaryButton key = {index} onClick={(e) => goToCourse(e.target.innerText)}>{courseTaken}</PrimaryButton>
+            {currentCourses?.map((currentCourse, index) => (
+                <HomeCourseTitle key = {index} onClick={(e) => goToCourse(e.target.innerText)}>{currentCourse}</HomeCourseTitle>
             ))}
         </div>
     );
