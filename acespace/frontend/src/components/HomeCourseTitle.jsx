@@ -32,6 +32,7 @@ const QuestionButton = styled.img`
   cursor: pointer;
   font-size: 3.5vmin;
   color: #c35cf7;
+  margin-right: 2vmin
 `;
 
 const CrossButton = styled.button`
