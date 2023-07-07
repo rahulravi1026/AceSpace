@@ -7,7 +7,7 @@ import { signOut } from 'firebase/auth';
 import { auth, db } from "../firebaseConfig";
 import { useNavigate } from 'react-router-dom';
 import { useAuthState } from "react-firebase-hooks/auth";
-import { collection, getDocs, doc, updateDoc, query, where } from "firebase/firestore"; 
+import { collection, getDocs, arrayUnion, setDoc, getDoc, deleteDoc, doc, updateDoc, query, where, onSnapshot } from "firebase/firestore"; 
 import { useEffect, useState } from 'react';
 import SearchBar from '../components/SearchBar';
 import infoIcon from '../assets/info-icon.png';
@@ -15,14 +15,36 @@ import { toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 import '../styles/toast-styles.css';
 import StyledToastContainer from '../components/StyledToastContainer';
+import HelpPopupForm from '../components/HelpPopupForm';
+import CourseHeading from '../components/CourseHeading';
+import HelpCard from '../components/HelpCard';
+import FulfillCard from '../components/FulfillCard';
 
 function Home() {
+    const { v4: uuidv4 } = require('uuid');
+
     const navigate = useNavigate();
     const [user] = useAuthState(auth);
     const [currentCourses, setCurrentCourses] = useState(null);
+    // const [helpRequests, setHelpRequests] = useState(null);
+    // eslint-disable-next-line
+    const [convertedHelpRequests, setConvertedHelpRequests] = useState([]);
+    // const [fulfillRequests, setFulfillRequests] = useState(null);
+    // eslint-disable-next-line
+    const [convertedFulfillRequests, setConvertedFulfillRequests] = useState([]);
     const [searchQuery, setSearchQuery] = useState("");
     const [searchResults, setSearchResults] = useState([]);
     const [dropdownVisible, setDropdownVisible] = useState(false);
+
+    const [isHelpPopupOpen, setIsHelpPopupOpen] = useState(false);
+    const [courseForHelp, setCourseForHelp] = useState('');
+
+    const [isHelpRequestsVisible, setIsHelpRequestsVisible] = useState(false);
+    const [isFulfillRequestsVisible, setIsFulfillRequestsVisible] = useState(false);
+
+    const toggleHelpPopup = () => {
+      setIsHelpPopupOpen(!isHelpPopupOpen);
+    };  
 
     function goProfile() {
         navigate("profile");
@@ -73,6 +95,8 @@ function Home() {
                 if (!querySnapshot.empty) {
                     const userData = querySnapshot.docs[0].data();
                     setCurrentCourses(userData.currentCourses);
+                    // setHelpRequests(userData.helpRequests);
+                    // setFulfillRequests(userData.fulfillRequests);
                 } else {
                   console.log("No user found with the specified email.");
                 }
@@ -84,6 +108,58 @@ function Home() {
         getExistingProfileInfo();
         // eslint-disable-next-line
 	}, [user?.email]);
+
+  useEffect(() => {
+    const fetchUserData = async () => {
+      try {
+        const usersRef = collection(db, "users");
+        const querySnapshot = await getDocs(query(usersRef, where("email", "==", user?.email)));
+        const documentID = querySnapshot.docs[0].id;
+  
+        const unsub = onSnapshot(doc(db, "users", documentID), async (document) => {
+          const docData = document.data();
+          const helpRequests = docData.helpRequests;
+          const fulfillRequests = docData.fulfillRequests;
+  
+          if (helpRequests) {
+            const convertedRequests = [];
+  
+            for (const helpRequest of helpRequests) {
+              const requestRef = doc(db, "requests", helpRequest.id);
+              const requestSnapshot = await getDoc(requestRef);
+              const requestData = requestSnapshot.data();
+              convertedRequests.push(requestData);
+            }
+  
+            setConvertedHelpRequests(convertedRequests);
+          } else {
+            setConvertedHelpRequests([]);
+          }
+
+          if (fulfillRequests) {
+            const convertedRequests = [];
+  
+            for (const fulfillRequest of fulfillRequests) {
+              const requestRef = doc(db, "requests", fulfillRequest.id);
+              const requestSnapshot = await getDoc(requestRef);
+              const requestData = requestSnapshot.data();
+              convertedRequests.push(requestData);
+            }
+  
+            setConvertedFulfillRequests(convertedRequests);
+          } else {
+            setConvertedFulfillRequests([]);
+          }
+        });
+  
+        return () => unsub();
+      } catch (e) {
+        console.error("Error fetching user data: ", e);
+      }
+    };
+  
+    fetchUserData();
+  }, [user?.email]);
 
     useEffect(() => {
         const fetchSearchResults = async () => {
@@ -171,6 +247,157 @@ function Home() {
       });
     };
 
+    // HELP FUNCTIONALITY
+
+    const openRequestPopup = async (course) => {
+        setIsHelpPopupOpen(true);
+        setCourseForHelp(course);
+    };  
+
+    const handleHelpSubmit = async (newTitle, newDescription, courseForHelp) => {
+      const uniqueId = uuidv4();
+
+      const usersRef = collection(db, "users");
+      const querySnapshot = await getDocs(query(usersRef, where("email", "==", user?.email)));
+      const userRef = doc(db, "users", querySnapshot.docs[0].id);
+
+      const allUsers = await getDocs(usersRef);
+      let potentialHelpers = [];
+
+      allUsers.forEach(async (user) => {
+        const userData = user.data();
+        const takenCourses = userData.coursesTaken || [];
+
+        if(takenCourses.includes(courseForHelp)) {
+          potentialHelpers.push(userData.email);
+          const potentialHelperSnapshot = await getDocs(query(usersRef, where("email", "==", userData.email)));
+          const potentialHelperRef = doc(db, "users", potentialHelperSnapshot.docs[0].id);
+
+          await updateDoc(potentialHelperRef, {
+            fulfillRequests: arrayUnion({ id: uniqueId, status: 0 })
+          })
+        }
+      });
+
+      if(potentialHelpers.length === 0) {
+        toast.info('There is no one to help with your request!', {
+          theme: "dark",
+          icon: ({theme, type}) =>  <img src={infoIcon} alt="Info Icon"/>,
+        });
+        setIsHelpPopupOpen(!isHelpPopupOpen);
+        return;
+      }
+
+      await updateDoc(userRef, {
+        helpRequests: arrayUnion({ id: uniqueId, status: 0 })
+      });
+
+      try {
+        const docRef = await setDoc(doc(db, "requests", uniqueId), {
+          id: uniqueId,
+          title: newTitle,
+          description: newDescription,
+          course: courseForHelp,
+          from: user?.email,
+          potentialHelpers: potentialHelpers,
+        });
+        console.log("New document created with ID: ", docRef.id);
+      } catch (e) {
+        console.error("Error creating document: ", e);
+      }
+
+      setIsHelpPopupOpen(!isHelpPopupOpen);
+      toast.info('Your help request has been submitted!', {
+          theme: "dark",
+          icon: ({theme, type}) =>  <img src={infoIcon} alt="Info Icon"/>,
+      });
+    }
+
+    const handleHelpTitleClick = () => {
+      setIsHelpRequestsVisible(!isHelpRequestsVisible);
+    }
+
+    const handleFulfillTitleClick = () => {
+      setIsFulfillRequestsVisible(!isFulfillRequestsVisible);
+    }
+
+    const handleHelpCardDelete = async (id) => {
+      const usersRef = collection(db, "users");
+      const querySnapshot = await getDocs(query(usersRef, where("email", "==", user?.email)));
+      const userRef = await doc(db, "users", querySnapshot.docs[0].id);
+      const userSnapshot = await getDoc(userRef);
+
+      if(userSnapshot.exists()) {
+        const existingHelpRequests = userSnapshot.data().helpRequests;
+        const updatedHelpRequests = existingHelpRequests.filter((existingHelpRequest) => existingHelpRequest.id !== id);
+
+        // setHelpRequests(updatedHelpRequests);
+        await updateDoc(userRef, { helpRequests : updatedHelpRequests });
+      }
+
+      const requestRef = doc(db, "requests", id);
+      const requestSnapshot = await getDoc(requestRef);
+      
+      if(requestSnapshot.exists()) {
+        const potentialHelpers = requestSnapshot.data().potentialHelpers;
+
+        potentialHelpers.forEach(async (potentialHelper) => {
+          const querySnapshot = await getDocs(query(usersRef, where("email", "==", potentialHelper)));
+          const potentialHelperRef = await doc(db, "users", querySnapshot.docs[0].id);
+          const potentialHelperSnapshot = await getDoc(potentialHelperRef);
+
+          if(potentialHelperSnapshot.exists()) {
+            const existingFulfillRequests = potentialHelperSnapshot.data().fulfillRequests;
+            const updatedFulfillRequests = existingFulfillRequests.filter((existingFulfillRequest) => existingFulfillRequest.id !== id);
+    
+            // setFulfillRequests(updatedFulfillRequests);
+            await updateDoc(potentialHelperRef, { fulfillRequests : updatedFulfillRequests });
+          }
+
+          const requestSnapshot = await getDoc(requestRef);
+          const requestData = requestSnapshot.data();
+          console.log(requestData);
+          convertedFulfillRequests.push(requestData);
+        });
+      }
+
+      await deleteDoc(doc(collection(db, "requests"), id));
+      toast.info('Your help request has been deleted!', {
+        theme: "dark",
+        icon: ({theme, type}) =>  <img src={infoIcon} alt="Info Icon"/>,
+    });
+    }
+
+    const handleFulfillCardDelete = async (id) => {
+        const usersRef = collection(db, "users");
+        const querySnapshot = await getDocs(query(usersRef, where("email", "==", user?.email)));
+        const userRef = await doc(db, "users", querySnapshot.docs[0].id);
+        const userSnapshot = await getDoc(userRef);
+
+        if(userSnapshot.exists()) {
+          const existingFulfillRequests = userSnapshot.data().fulfillRequests;
+          const updatedFulfillRequests = existingFulfillRequests.filter((existingFulfillRequest) => existingFulfillRequest.id !== id);
+
+          // setFulfillRequests(updatedFulfillRequests);
+          await updateDoc(userRef, { fulfillRequests : updatedFulfillRequests });
+        }
+
+        const requestRef = doc(db, "requests", id);
+        const requestSnapshot = await getDoc(requestRef);
+        
+        if(requestSnapshot.exists()) {
+          const existingPotentialHelpers = requestSnapshot.data().potentialHelpers;
+          const updatedPotentialHelpers = existingPotentialHelpers.filter((existingPotentialHelper) => existingPotentialHelper !== user?.email);
+
+          await updateDoc(requestRef, {potentialHelpers : updatedPotentialHelpers});
+        }
+
+        toast.info('Thank you for letting us know you are unable to help with that request!', {
+            theme: "dark",
+            icon: ({theme, type}) =>  <img src={infoIcon} alt="Info Icon"/>,
+        });
+    }
+
     return (
         <div className = "homePage">
             <StyledToastContainer position="top-left" theme="dark"/>
@@ -194,8 +421,45 @@ function Home() {
                 )}
             </div>
             {currentCourses?.map((currentCourse, index) => (
-                <HomeCourseTitle key = {index} goToCourse={() => goToCourse(currentCourse)} getCourseName={getCourseName} onRemove={handleCurrentCourseRemove}>{currentCourse}</HomeCourseTitle>
+                <HomeCourseTitle key = {index} goToCourse={() => goToCourse(currentCourse)} getCourseName={getCourseName} onRemove={handleCurrentCourseRemove} onHelp = {() => openRequestPopup(currentCourse)}>{currentCourse}</HomeCourseTitle>
             ))}
+            <div className = "resourcesContainer">
+                <CourseHeading onClick = {handleHelpTitleClick}>help requests</CourseHeading>
+            </div>
+            {isHelpRequestsVisible && 
+                <div className = "coursesTakenTitle">
+                    <div className = "resourceCards">
+                        {(convertedHelpRequests && convertedHelpRequests.length > 0) ? (
+                            convertedHelpRequests?.map((helpRequest, index) => 
+                              helpRequest ? (
+                                <HelpCard key = {index} id = {helpRequest.id} course = {helpRequest.course} title = {helpRequest.title} description = {helpRequest.description}  
+                                onDelete={handleHelpCardDelete}/>
+                            ) : null
+                        ) ) : (
+                            <span className = "noneDisplay">No help requests to display :)</span>
+                        )}
+                    </div>
+                </div>
+            }
+            <div className = "resourcesContainer">
+                <CourseHeading onClick = {handleFulfillTitleClick}>fulfill requests</CourseHeading>
+            </div>
+            {isFulfillRequestsVisible && 
+                <div className = "coursesTakenTitle">
+                    <div className = "resourceCards">
+                        {(convertedFulfillRequests && convertedFulfillRequests.length > 0) ? (
+                            convertedFulfillRequests?.map((fulfillRequest, index) => 
+                              fulfillRequest ? (
+                                <FulfillCard key = {index} id = {fulfillRequest.id} course = {fulfillRequest.course} title = {fulfillRequest.title} description = {fulfillRequest.description} 
+                                 onDelete={handleFulfillCardDelete}/>
+                            ) : null
+                        )) : (
+                            <span className = "noneDisplay">No fulfill requests to display :)</span>
+                        )}
+                    </div>
+                </div>
+            }
+            {isHelpPopupOpen && <HelpPopupForm courseForHelp = {courseForHelp} handleCancel={toggleHelpPopup} handleSubmit = {handleHelpSubmit} />}
         </div>
     );
 }

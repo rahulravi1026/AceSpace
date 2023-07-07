@@ -68,7 +68,7 @@ const CrossButton = styled.button`
   margin-right: 0.5vmin;
 `;
 
-const HomeCourseTitle = ({children, getCourseName, onRemove, goToCourse}) => {
+const HomeCourseTitle = ({children, getCourseName, onRemove, onHelp, goToCourse}) => {
   const [courseName, setCourseName] = useState('');
 
   const handleClick = () => {
@@ -88,6 +88,11 @@ const HomeCourseTitle = ({children, getCourseName, onRemove, goToCourse}) => {
     onRemove(children);
   };
 
+  const handleHelp = (e) => {
+    e.stopPropagation();
+    onHelp();
+  }
+
   return (
     <RectangleContainer onClick = {handleClick}>
       <TextContainer>
@@ -95,7 +100,7 @@ const HomeCourseTitle = ({children, getCourseName, onRemove, goToCourse}) => {
         <CourseNameText>{courseName}</CourseNameText>
       </TextContainer>
       <IconsContainer> 
-        <QuestionButton src = {questionIcon}></QuestionButton>
+        <QuestionButton src = {questionIcon} onClick={handleHelp}></QuestionButton>
         <CrossButton onClick={handleRemove}>&times;</CrossButton> 
       </IconsContainer>
     </RectangleContainer>
